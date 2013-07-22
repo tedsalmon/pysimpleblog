@@ -5,7 +5,7 @@ import sys
 current_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append('%s/../' % current_path)
 os.chdir(current_path)
-# Import BitLamp as Application
+# Import PySimpleBlog as Application
 from pysimpleblog.blog import blog_app as application
 # Run our app in debug if called by shell
 if __name__ == '__main__':

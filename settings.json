@@ -1,7 +1,7 @@
 {
-"title": "The Blog of Ted",
-"header": "The Blog of Ted",
-"subheader": "Linux, Python, and PHP",
-"footer": "I don't care about attribution, bro. You can find the <a class='extern' href='https://code.google.com/p/phpsimpleblog/'>blog source code here.</a>",
-"debug": true
+"title": "Your Blog",
+"header": "This is a Blog!",
+"subheader": "I like cats",
+"footer": "Default Footer",
+"debug": false
 }
