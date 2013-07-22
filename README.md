@@ -40,4 +40,3 @@ Setup
 2. Edit settings.json with your settings
 
 3. Run <pre>python setup.py</pre> to create an account and the run <pre>python app.wsgi</pre> to start the web app in the Python debug server. The app.wsgi file is already mod_wsgi compatible.
-
