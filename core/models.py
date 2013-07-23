@@ -6,19 +6,20 @@ from datetime import datetime
 from hashlib import sha256, sha512
 from pymongo import MongoClient, errors as pymongoerrors
 from random import randint
-from pysimpleblog.core.functions import b36encode
-from pysimpleblog.core.functions import UTCDate
+from pysimpleblog.core.functions import b36encode, Settings, UTCDate
 
-DB_CONN = MongoClient('localhost')
+_s = Settings()
+DB_SETTINGS = _s['database']
+DB_CONN = MongoClient(DB_SETTINGS['address'])
 
 class Blog(object):
     
     POST_NS = 0
     PAGE_NS = 1
-
+    
     def __init__(self, db_conn=False, ):
         self._client = db_conn if db_conn else DB_CONN
-        self._db_handle = self._client.blog
+        self._db_handle = self._client[DB_SETTINGS['name']]
         self.blog_db = self._db_handle.entries
         self.users_db = self._db_handle.users
     
@@ -29,8 +30,9 @@ class Blog(object):
     
     
     def approve_comment(self, comment_id, ):
-        return self.blog_db.update({"comments.id": comment_id},
-                                   {"$set": {"comments.approval": 1}})
+        return self.blog_db.update({"comments":
+                                   {"$elemMatch": {"id": comment_id}}},
+                                   {"$set": {"comments.$.approval": 1}})
     
     
     def create_comment(self, comment_data, post_id, post_data=None, ):
@@ -67,17 +69,27 @@ class Blog(object):
             "public": int(bool(data['public'])),
             "comments": []}
         self.blog_db.insert(post_data)
-        return url_name
+        return '%s/%s' % (now.strftime('%Y'), url_name)
     
     
     def delete_post(self, post_id, ):
         return self.blog_db.remove({"_id": post_id})
     
-    def edit_post(self, post_data, ):
+    
+    def deny_comment(self, comment_id, ):
+        return self.blog_db.update({"comments":
+                                   {"$elemMatch": {"id": comment_id}}},
+                                   {"$set": {"comments.$.approval": -1}})
+    
+    
+    def edit_post(self, post_id, post_data, ):
         if type(post_data['tags']) != list:
             post_data['tags'] = [tag.strip() for tag in
                                  post_data['tags'].split(',')]
-        return self.blog_db.update({"_id": post_data['_id']}, post_data)
+        if not self.blog_db.update({"_id": post_id}, post_data):
+            return False
+        return '%s/%s' % (post_data['date'].strftime('%Y'), post_data['url'])
+    
     
     def get_archive(self, ):
         return_data = {}
@@ -116,7 +128,8 @@ class Blog(object):
                      'public': 1, 'type': self.POST_NS
                     }
         else:
-            query = {'_id': url, 'public': 1, 'type': self.POST_NS}
+            query = {'$or': [{'_id': url}, {'url': url}],
+                     'public': 1, 'type': self.POST_NS}
         post = self.blog_db.find_one(query)
         if post:
             comments = []
@@ -171,11 +184,12 @@ class Blog(object):
                     comments.append(comment)
         return comments
 
+
 class Links(object):
     
     def __init__(self, db_conn=False, ):
         self._client = db_conn if db_conn else DB_CONN
-        self._db_handle = self._client.blog
+        self._db_handle = self._client[DB_SETTINGS['name']]
         self.links = self._db_handle.links
     
     def add_link(self, url, name, ):
@@ -198,9 +212,9 @@ class Sessions(object):
     
     def __init__(self, db_conn=False, ):
         self._client = db_conn if db_conn else DB_CONN
-        self._db_handle = self._client.blog
+        self._db_handle = self._client[DB_SETTINGS['name']]
         self.session_db = self._db_handle.sessions
-        self.user_db = self._db_handle.users
+
     
     def _clean_up(self, ):
         return self.session_db.remove({"expiry": {"$lte": UTCDate()}})
@@ -215,13 +229,12 @@ class Sessions(object):
     def expire(self, s_id):
         return self.session_db.remove({"session_id": s_id})    
     
-    def new(self, user_data, ):
+    def new(self, user_id, ):
         self._clean_up()
         expiry = UTCDate(-86400)
-        user_session = {"user_id": user_data['_id'],
-                        "session_id":
-                            sha256("%s%s" % (expiry.strftime("%s"),
-                                             randint(0, 9000))).hexdigest(),
+        s_id = sha256("%s%s" % (expiry,randint(0, 9000))).hexdigest()
+        user_session = {"user_id": user_id,
+                        "session_id": s_id,
                         "expiry": expiry,
                         }
         self.session_db.insert(user_session)
@@ -232,7 +245,7 @@ class Users(object):
     
     def __init__(self, db_conn=False, ):
         self._client = db_conn if db_conn else DB_CONN
-        self._db_handle = self._client.blog
+        self._db_handle = self._client[DB_SETTINGS['name']]
         self.db = self._db_handle.users
         self.error = ""
         

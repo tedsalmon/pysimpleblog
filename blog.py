@@ -14,10 +14,22 @@ links = Links()
 # Settings
 settings = Settings()
 
+def auth_check(func):
+    def wrapper(*args, **kwargs):
+        login_data=False
+        session_id = request.get_cookie('session_id')
+        if not session_id:
+            return func(login_data, *args, **kwargs)
+        login_data = sessions.check(session_id)
+        if not login_data:
+            return func(login_data, *args, **kwargs)
+        return func(login_data, *args, **kwargs)
+    return wrapper
+
+@auth_check
 @blog_app.route('/')
 @blog_app.route('/page/<page_id>')
-def show_listing(page_id=None, ):
-    login_data = check_login()
+def show_listing(login_data=False, page_id=None,):
     page_id = 1 if not page_id else int(page_id)
     posts = entries.get_posts(page_id)
     if not posts:
@@ -26,10 +38,10 @@ def show_listing(page_id=None, ):
     return template('main', settings, page_id=page_id,
                     user_login=login_data,posts=posts, recent_posts=recent)
 
+@auth_check
 @blog_app.route('/<url:re:[a-z0-9]{6}>')
 @blog_app.route('/<year:int>/<url>')
-def show_post(url, year=False, ):
-    login_data = check_login()
+def show_post(url, login_data=False, year=False,):
     post_data = entries.get_post(url, year=year)
     if not post_data:
         abort(404, "Not Found")
@@ -81,14 +93,14 @@ def show_new_post():
     return template('admin/post_editor', settings, user_login=login_data)
 
 @blog_app.route('/admin/comment-approver')
-def comment_approver():
+def show_pending_comments():
     login_data = check_login(abort_on_fail=True)
     comments = entries.get_unapproved_comments()
     return template('admin/comments', settings, user_login=login_data,
                     comments=comments, )
 
 @blog_app.route('/admin/post-editor/<post_id:re:[a-z0-9]{6}>')
-def post_editor(post_id, ):
+def show_post_editor(post_id, ):
     login_data = check_login(abort_on_fail=True)
     post = entries.get_post(post_id, output_html=False, )
     if not post:
@@ -106,9 +118,8 @@ def show_profile():
                     profile_data=profile_data, )
 
 # API
-@blog_app.route('/api/add-comment', method='POST')
+@blog_app.route('/api/comment', method='POST')
 def create_comment():
-    login_data = check_login()
     return_data = {'error': False}
     req_data = request.json
     post_data = entries.get_post(req_data['post_id'])
@@ -137,13 +148,50 @@ def login():
         return_data['error'] = users.error
         return return_data
     # Start Session
-    session = sessions.new(user)
+    session = sessions.new(user['_id'])
     response.set_cookie('session_id', session['session_id'],
                         expires=session['expiry'], path='/', )
     return return_data
 
+@blog_app.route('/api/post', method='GET')
+@blog_app.route('/api/post/<page_num:int>', method='GET')
+def get_posts(page_num=1, ):
+    return_data = {'posts': []}
+    return_data['posts'] = entries.get_posts(page_num)
+    for i in xrange(0, len(return_data['posts'])):
+        post = return_data['posts'][i]
+        post['date'] = str(post['date'])
+        del post['comments']
+        del post['body']
+    return return_data
 
-@blog_app.route('/api/admin/create-post', method='POST')
+@blog_app.route('/api/post/<post_id>', method='GET')
+def get_post(post_id, ):
+    post_data = {'post': {}}
+    post = entries.get_post(post_id)
+    if post:
+        post['date'] = str(post['date'])
+        for j in xrange(0, len(post['comments'])):
+            comment = post['comments'][j]
+            comment['date'] = str(comment['date'])
+        post_data['post'] = post
+    return post_data
+
+# Admin API - Auth required
+@blog_app.route('/api/comment/<comment_id>', method='PUT')
+def comment_approve(comment_id, ):
+    login_data = check_login(abort_on_fail=True)
+    entries.approve_comment(comment_id)
+    return {}
+
+@blog_app.route('/api/comment/<comment_id>', method='DELETE')
+def comment_deny(comment_id, ):
+    login_data = check_login(abort_on_fail=True)
+    entries.deny_comment(comment_id)
+    return {}
+    
+
+@blog_app.route('/api/admin/post', method='POST')
 def create_post():
     login_data = check_login(abort_on_fail=True)
     return_data = {'error': False}
@@ -162,40 +210,37 @@ def create_post():
     return return_data
 
 
-@blog_app.route('/api/admin/delete-post', method='POST')
-def delete_post():
+@blog_app.route('/api/admin/post/<post_id>', method='DELETE')
+def delete_post(post_id, ):
     login_data = check_login(abort_on_fail=True)
     return_data = {'error': False}
-    req_data = request.json
-    if not req_data['post_id']:
-        return_data['error'] = 'No Post ID Provided'
-    if not entries.delete_post(req_data['post_id']):
+    if not entries.delete_post(post_id):
         return_data['error'] = 'Invalid Post ID'
         return return_data
     return return_data
 
 
-@blog_app.route('/api/admin/edit-post', method='POST')
-def edit_post():
+@blog_app.route('/api/admin/post/<post_id>', method='PUT')
+def edit_post(post_id, ):
     login_data = check_login(abort_on_fail=True)
     return_data = {'error': False}
     req_data = request.json
-    post = entries.get_post(req_data['id'], output_html=False,
-                              show_name=False)
+    post = entries.get_post(post_id, output_html=False, show_name=False)
     if not post:
         return_data['error'] = 'Invalid Post ID'
         return return_data
-    edited_post = dict((key, post[key]) for key in post)
-    for key in edited_post:
+    post_data = dict((key, post[key]) for key in post)
+    for key in post_data:
         if key in req_data:
-            edited_post[key] = req_data[key]
-    print type(edited_post['tags'])
-    entries.edit_post(edited_post)
-    return_data['location'] = '/%s/%s' % (post['_id'], post['url_name'])
+            post_data[key] = req_data[key]
+    url = entries.edit_post(post_id, post_data)
+    if not url:
+        return_data['error'] = 'Error Updating post'
+    return_data['location'] = url
     return return_data
 
 
-@blog_app.route('/api/admin/change-password', method='POST')
+@blog_app.route('/api/admin/profile/changepassword', method='PUT')
 def change_password():
     login_data = check_login(abort_on_fail=True)
     return_data = {'error': False}

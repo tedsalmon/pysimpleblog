@@ -8,13 +8,18 @@ Why?
 
 I started this project because I didn't want to use WordPress and also so that I could get more exposure to MongoDB and Bottle.py.
 
+Features
+========
+
+* Simple, easy to use interface.
+* RESTful API! (Docoumentation comming)
+
 
 Roadmap
 =======
 
 Currently, not all features that I would like have been implemented. Here's a list of features waiting to be implemented in order of importance descending.
 
-* Comment approval
 * Save Post as Draft (Mostly implemented)
 * User Management
 * Custom links to external sites

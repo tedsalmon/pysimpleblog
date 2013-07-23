@@ -51,8 +51,8 @@
     {% if post['comments'] %}
         {% for comment in post['comments'] %}
         <div class="blog-comment">
-            <div>{{comment['name']}} wrote on {{comment['date'].strftime('%B %d, %Y %H:%M')}}:</div>
-            <div class="blog-comment-body">{{comment['comment']}}</div>
+            <div>{{comment['name']|e}} wrote on {{comment['date'].strftime('%B %d, %Y %H:%M')}}:</div>
+            <div class="blog-comment-body">{{comment['comment']|e}}</div>
         </div>
         {% endfor %}
     {% else %}

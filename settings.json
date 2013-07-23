@@ -8,10 +8,10 @@
         "ga_key": ""
     },
     "database":{
-        "address": "",
+        "address": "127.0.0.1",
         "username": "",
         "password": "",
-        "name": ""
+        "name": "blog"
     },
     "debug": false
 }

@@ -138,5 +138,12 @@
         {% if user_login %}
         <script type="text/javascript" src="/static/js/admin.js"></script>
         {% endif %}
+        <script>
+            (function(){
+                Blog.init();
+                if(Blog.Admin)
+                    Blog.Admin.init();
+            })();
+        </script>
     </body>
 </html>

@@ -4,15 +4,15 @@
 {% if comments %}
 <div class="blog-comments">
     {% for comment in comments %}
-    <div class="comment">
+    <div id="comment_{{comment['id']}}" class="comment">
 	<div>{{comment['name']}} wrote on {{comment['date'].strftime("%B %d, %Y %H:%M")}}:</div>
 	<div class="blog-comment-body">{{comment['comment']}}</div>
 	<form>
         <div class="control-group">
             <div class="control-group">
                 <div class="controls">
-                    <button id="comment_approve" class="btn">Approve</button>
-                    <button id="comment_deny" class="btn">Deny</button>
+                    <button data-approval="1" data-comment-id="{{comment['id']}}" class="comment-btn btn">Approve</button>
+                    <button data-approval="0" data-comment-id="{{comment['id']}}" class="comment-btn btn">Deny</button>
                 </div>
             </div>
 	</div>
