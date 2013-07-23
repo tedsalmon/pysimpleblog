@@ -7,7 +7,15 @@
     <div class="comment">
 	<div>{{comment['name']}} wrote on {{comment['date'].strftime("%B %d, %Y %H:%M")}}:</div>
 	<div class="blog-comment-body">{{comment['comment']}}</div>
-    </div>
+	<form>
+        <div class="control-group">
+            <div class="control-group">
+                <div class="controls">
+                    <button id="comment_approve" class="btn">Approve</button>
+                    <button id="comment_deny" class="btn">Deny</button>
+                </div>
+            </div>
+	</div>
     {% endfor %}
 </div>
 {% else %}

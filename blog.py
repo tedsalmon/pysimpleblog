@@ -22,8 +22,9 @@ def show_listing(page_id=None, ):
     posts = entries.get_posts(page_id)
     if not posts:
         abort(404, "Not Found")
-    return template('main', settings,page_id=page_id, user_login=login_data,
-                     posts=posts, recent_posts=entries.get_recent())
+    recent = entries.get_recent()
+    return template('main', settings, page_id=page_id,
+                    user_login=login_data,posts=posts, recent_posts=recent)
 
 @blog_app.route('/<url:re:[a-z0-9]{6}>')
 @blog_app.route('/<year:int>/<url>')
@@ -32,13 +33,14 @@ def show_post(url, year=False, ):
     post_data = entries.get_post(url, year=year)
     if not post_data:
         abort(404, "Not Found")
-    return template('post', settings, post_data, user_login=login_data)
+    return template('post', settings, sub_title=post_data['title'],
+                    post=post_data, user_login=login_data)
 
 @blog_app.route('/archive')
 def show_archives():
     login_data = check_login()
-    return template('archive', settings, user_login=login_data,
-                    special=entries.get_archive())
+    return template('archive', settings, sub_title='Archives',
+                    user_login=login_data, special=entries.get_archive())
 
 @blog_app.route('/special/<page_name>')
 def show_special(page_name, ):
@@ -46,15 +48,16 @@ def show_special(page_name, ):
     page = entries.get_page(page_name)
     if not page:
         abort(404, "Not Found")
-    return template('special', settings, user_login=login_data, page=page)
+    return template('special', settings, sub_title=page['title'],
+                    user_login=login_data, page=page)
 
 @blog_app.route('/tags/<tag_name>')
 def show_tags(tag_name, ):
     login_data = check_login()
     tag_name = tag_name.replace('-',' ')
     post_by_tags = entries.get_by_tags([tag_name])
-    return template('tags', settings, posts=post_by_tags, tag=tag_name,
-                    user_login=login_data)
+    return template('tags', settings, sub_title='Posts Tagged %s' % tag_name,
+                    tag=tag_name, posts=post_by_tags, user_login=login_data)
 
 
 @blog_app.route('/logout')

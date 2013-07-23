@@ -1,7 +1,17 @@
 {
-"title": "Your Blog",
-"header": "This is a Blog!",
-"subheader": "I like cats",
-"footer": "Default Footer",
-"debug": false
+    "page_settings": {
+        "title": "Your Blog",
+        "header": "This is a Blog!",
+        "subheader": "I like cats",
+        "footer": "Default Footer",
+        "blog_url": "",
+        "ga_key": ""
+    },
+    "database":{
+        "address": "",
+        "username": "",
+        "password": "",
+        "name": ""
+    },
+    "debug": false
 }
