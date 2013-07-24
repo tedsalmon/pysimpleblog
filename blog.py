@@ -147,7 +147,7 @@ def show_profile(login_data=False, ):
 
 # API
 @blog_app.route('/api/login', method='POST')
-def login():
+def api_login():
     return_data = {'error': False}
     fields = ['username', 'password']
     req_data = sterilize(request.json, fields)
@@ -254,7 +254,7 @@ def api_delete_post(post_id, login_data=False, ):
 
 @blog_app.route('/api/post/<post_id>', method='PUT',
                 apply=[auth_check(required=True, api=True)])
-def edit_post(post_id, login_data=False, ):
+def api_edit_post(post_id, login_data=False, ):
     return_data = {'error': False}
     req_data = request.json
     post = entries.get_post_internal(post_id)
@@ -278,7 +278,7 @@ def edit_post(post_id, login_data=False, ):
 
 @blog_app.route('/api/admin/profile/changepassword', method='PUT',
                 apply=[auth_check(required=True, api=True)])
-def change_password(login_data=False, ):
+def api_change_password(login_data=False, ):
     return_data = {'error': False}
     req_data = request.json
     fields = ['new', 'confirm', 'old']
