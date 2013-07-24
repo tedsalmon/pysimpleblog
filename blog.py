@@ -115,7 +115,7 @@ def show_pending_comments(login_data=False, ):
     return template('admin/comments', settings, user_login=login_data,
                     comments=comments, )
 
-
+# @todo Rename edit-post
 @blog_app.route('/admin/post-editor/<post_id:re:[a-z0-9]{6}>',
                 apply=[auth_check(required=True)])
 def show_post_editor(post_id, login_data=False, ):
@@ -124,6 +124,17 @@ def show_post_editor(post_id, login_data=False, ):
         abort(404, "Not Found")
     return template('admin/post_editor', settings, user_login=login_data,
                     post_data=post, )
+
+
+@blog_app.route('/admin/manage-posts', apply=[auth_check(required=True)])
+@blog_app.route('/admin/manage-posts/<page_num:int>',
+                apply=[auth_check(required=True)])
+def show_post_manager(page_num=1, login_data=False, ):
+    posts = entries.get_posts(page_num, all_posts=True)
+    if not posts:
+        abort(404, "Not Found")
+    return template('admin/post_management', settings, user_login=login_data,
+                    posts=posts)
 
 
 @blog_app.route('/admin/view-profile', apply=[auth_check(required=True)])

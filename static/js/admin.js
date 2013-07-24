@@ -27,8 +27,8 @@ Blog.Admin = {
 	    return false;
 	});
 	
-	$('#delete_post').click(function(){
-	    $post_id = $('#delete_post').attr('data-post-id');
+	$('.delete-post').click(function(){
+	    $post_id = this.getAttribute('data-post-id');
 	    $('#delete_modal').modal();
 	});
 	

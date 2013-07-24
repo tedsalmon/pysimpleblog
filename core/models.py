@@ -127,11 +127,11 @@ class Blog(object):
             query = {'url': url,
                      'date': {'$gte': datetime(year,1,1),
                                '$lte':datetime(year,12,31)},
-                     'public': 1, 'type': self.POST_NS
+                     'status': 1, 'type': self.POST_NS
                     }
         else:
             query = {'$or': [{'_id': url}, {'url': url}],
-                     'public': 1, 'type': self.POST_NS}
+                     'status': 1, 'type': self.POST_NS}
         post = self.blog_db.find_one(query)
         if post:
             comments = []
@@ -150,7 +150,7 @@ class Blog(object):
         if all_posts:
             found = self.blog_db.find().sort('date', -1).limit(10).skip(skip)
         else:
-            qry = {'type': self.POST_NS, 'public': 1}
+            qry = {'type': self.POST_NS, 'status': 1}
             found = self.blog_db.find(qry).sort('date', -1).limit(10).skip(skip)
         posts = []
         for post in found:
@@ -181,7 +181,7 @@ class Blog(object):
     
     
     def get_recent(self, ):
-        return self.blog_db.find({'type': self.POST_NS, 'public': 1},
+        return self.blog_db.find({'type': self.POST_NS, 'status': 1},
                                  fields=['url', 'title']
                                  ).sort('date', -1).limit(10)
     

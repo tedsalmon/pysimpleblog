@@ -11,7 +11,7 @@
                 {% if user_login %}
                 <div class="blog-post-control">
                     <a title="Edit Post" class="icon-edit" href="/admin/post-editor/{{post['_id']}}"></a>
-                    <a id="delete_post" title="Delete Post" class="icon-ban-circle" href="#" data-post-id="{{post['_id']}}"></a>
+                    <a title="Delete Post" class="delete-post icon-ban-circle" href="#" data-post-id="{{post['_id']}}"></a>
                 </div>
                 {% endif %}
             </hgroup>
