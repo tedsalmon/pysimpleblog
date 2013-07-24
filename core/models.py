@@ -84,13 +84,16 @@ class Blog(object):
                                    {"$set": {"comments.$.approval": -1}})
     
     
-    def edit_post(self, post_id, post_data, ):
-        if type(post_data['tags']) != list:
-            post_data['tags'] = [tag.strip() for tag in
-                                 post_data['tags'].split(',')]
-        if not self.blog_db.update({"_id": post_id}, post_data):
+    def edit_post(self, post_id, data, ):
+        if type(data['tags']) != list:
+            data['tags'] = [tag.strip() for tag in data['tags'].split(',')]
+        if not self.blog_db.update({"_id": post_id}, data):
             return False
-        return '%s/%s' % (post_data['date'].strftime('%Y'), post_data['url'])
+        if data['type'] == 0:
+            uri = '%s/%s' % (data['date'].strftime('%Y'), data['url'])
+        else:
+            uri = 'special/%s' % data['url']
+        return uri
     
     
     def get_archive(self, ):

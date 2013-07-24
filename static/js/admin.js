@@ -34,7 +34,7 @@ Blog.Admin = {
 	
 	$('#delete_confirm').click(function(){
 	    $.ajax({
-                url: '/api/admin/post/'+ $('#delete_post').attr('data-post-id'),
+                url: '/api/post/'+ $('#delete_post').attr('data-post-id'),
                 type: 'DELETE',
                 contentType: 'application/json; charset=utf-8',
                 success: function($return_data) {
@@ -52,7 +52,7 @@ Blog.Admin = {
 	    if (!$edit_post) return false;
 	    $edit_post['public'] = $('#entry_public').attr('checked');
 	    $.ajax({
-                url: '/api/admin/post/' + $('#entry_id').val(),
+                url: '/api/post/' + $('#entry_id').val(),
                 type: 'PUT',
                 contentType: 'application/json; charset=utf-8',
                 data: JSON.stringify($edit_post),

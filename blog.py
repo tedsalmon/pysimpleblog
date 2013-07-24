@@ -146,25 +146,6 @@ def show_profile(login_data=False, ):
                     profile_data=profile_data, )
 
 # API
-@blog_app.route('/api/comment', method='POST')
-def create_comment():
-    return_data = {'error': False}
-    req_data = request.json
-    post_data = entries.get_post(req_data['post_id'])
-    if not req_data['comment']:
-        return_data['error'] = 'No comment given'
-    for key in req_data:
-        req_data[key] = str(utils.escape(req_data[key]))
-    comment = {'name': req_data['name'],
-               'email': req_data['email'],
-               'comment': req_data['comment'],}
-    if not entries.create_comment(comment, req_data['post_id'], post_data):
-        return_data['error'] = 'Parent post not found'
-    else:
-        return_data['msg'] = 'Comment submitted for approval.'
-    return return_data
-
-
 @blog_app.route('/api/login', method='POST')
 def login():
     return_data = {'error': False}
@@ -183,10 +164,27 @@ def login():
                         expires=session['expiry'], path='/', )
     return return_data
 
+@blog_app.route('/api/comment', method='POST')
+def api_create_comment():
+    return_data = {'error': False}
+    req_data = request.json
+    post_data = entries.get_post(req_data['post_id'])
+    if not req_data['comment']:
+        return_data['error'] = 'No comment given'
+    for key in req_data:
+        req_data[key] = str(utils.escape(req_data[key]))
+    comment = {'name': req_data['name'],
+               'email': req_data['email'],
+               'comment': req_data['comment'],}
+    if not entries.create_comment(comment, req_data['post_id'], post_data):
+        return_data['error'] = 'Parent post not found'
+    else:
+        return_data['msg'] = 'Comment submitted for approval.'
+    return return_data
 
 @blog_app.route('/api/post', method='GET')
 @blog_app.route('/api/post/<page_num:int>', method='GET')
-def get_posts(page_num=1, ):
+def api_get_posts(page_num=1, ):
     return_data = {'posts': []}
     return_data['posts'] = entries.get_posts(page_num)
     for i in xrange(0, len(return_data['posts'])):
@@ -198,7 +196,7 @@ def get_posts(page_num=1, ):
 
 
 @blog_app.route('/api/post/<post_id>', method='GET')
-def get_post(post_id, ):
+def api_get_post(post_id, ):
     post_data = {'post': {}}
     post = entries.get_post(post_id)
     if post:
@@ -213,21 +211,21 @@ def get_post(post_id, ):
 # Admin API - Auth required
 @blog_app.route('/api/comment/<comment_id>', method='PUT',
                 apply=[auth_check(required=True, api=True)])
-def comment_approve(comment_id, login_data=False, ):
+def api_comment_approve(comment_id, login_data=False, ):
     entries.approve_comment(comment_id)
     return {}
 
 
 @blog_app.route('/api/comment/<comment_id>', method='DELETE',
                 apply=[auth_check(required=True, api=True)])
-def comment_deny(comment_id, login_data=False, ):
+def api_comment_deny(comment_id, login_data=False, ):
     entries.deny_comment(comment_id)
     return {}
     
 
 @blog_app.route('/api/admin/post', method='POST',
                 apply=[auth_check(required=True, api=True)])
-def create_post(login_data=False, ):
+def api_create_post(login_data=False, ):
     return_data = {'error': False}
     fields = ['title', 'body', 'tags', 'status', 'type']
     post_data = sterilize(request.json, fields)
@@ -246,7 +244,7 @@ def create_post(login_data=False, ):
 
 @blog_app.route('/api/post/<post_id>', method='DELETE',
                 apply=[auth_check(required=True, api=True)])
-def delete_post(post_id, login_data=False, ):
+def api_delete_post(post_id, login_data=False, ):
     return_data = {'error': False}
     if not entries.delete_post(post_id):
         return_data['error'] = 'Invalid Post ID'
@@ -264,9 +262,13 @@ def edit_post(post_id, login_data=False, ):
         return_data['error'] = 'Invalid Post ID'
         return return_data
     post_data = dict((key, post[key]) for key in post)
+    special_types =  ['status', 'type'] 
     for key in post_data:
         if key in req_data:
-            post_data[key] = req_data[key]
+            if key in special_types:
+                post_data[key] = int(req_data[key])
+            else:
+                post_data[key] = req_data[key]
     url = entries.edit_post(post_id, post_data)
     if not url:
         return_data['error'] = 'Error Updating post'
