@@ -18,9 +18,8 @@ Features
 Roadmap
 =======
 
-Currently, not all features that I would like have been implemented. Here's a list of features waiting to be implemented in order of importance descending.
+Currently, not all features that I would like have been implemented. Here's a list of features waiting to be implemented by order of urgency.
 
-* Save Post as Draft (Mostly implemented)
 * User Management
 * Custom links to external sites
 * Image uploads
