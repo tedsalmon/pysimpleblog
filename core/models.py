@@ -47,13 +47,15 @@ class Blog(object):
                             {"$push": {"comments": comment_data}})
     
 
-    def create_post(self, data, author, data_ns, ):
-        s_title = data['title'].split(' ')
-        if len(s_title) > 1:
-            s_title = [s for s in s_title if s.isalpha() or s.isdigit()]
-        else:
-            s_title = [''.join([s for s in s_title[0] if s.isalpha() or s.isdigit()])]
-        url_name = '-'.join(s_title[0:5 if len(s_title) >= 6
+    def create_post(self, data, author, data_ns, url_slug=None, ):
+        if not url_slug:
+            s_title = data['title'].split(' ')
+            if len(s_title) > 1:
+                s_title = [s for s in s_title if s.isalpha() or s.isdigit()]
+            else:
+                s_title = [''.join([s for s in s_title[0] if s.isalpha()
+                                    or s.isdigit()])]
+            url_slug = '-'.join(s_title[0:7 if len(s_title) >= 8
                                     else len(s_title)]).lower()
         post_id = self._create_id()
         now = UTCDate()
@@ -62,14 +64,14 @@ class Blog(object):
             "title": data['title'],
             "author": author,
             "body": data['body'],
-            "url": url_name,
+            "url": url_slug,
             "date": now,
             "type": data_ns,
             "tags": data['tags'],
-            "public": int(bool(data['public'])),
+            "status": int(bool(data['status'])),
             "comments": []}
         self.blog_db.insert(post_data)
-        return '%s/%s' % (now.strftime('%Y'), url_name)
+        return '%s/%s' % (now.strftime('%Y'), url_slug)
     
     
     def delete_post(self, post_id, ):
@@ -119,7 +121,7 @@ class Blog(object):
         return posts
 
 
-    def get_post(self, url, year=None, output_html=True, show_name=True, ):
+    def get_post(self, url, year=None, ):
         query = {}
         if year:
             query = {'url': url,
@@ -138,17 +140,20 @@ class Blog(object):
                     comments.append(comment)
             post['comments'] = comments
             author = self.users_db.find_one({"_id": post['author']})
-            post['author'] = author['display_name'] if show_name else author['_id']
-            if output_html:
-                post['body'] = HtmlEmitter(Parser(post['body']).parse()).emit()
+            post['author'] = author['display_name']
+            post['body'] = HtmlEmitter(Parser(post['body']).parse()).emit()
         return post
     
     
-    def get_posts(self, page_num, ):
+    def get_posts(self, page_num, all_posts=False, ):
         skip = 0 if page_num == 1 else 10 * (page_num-1)
+        if all_posts:
+            found = self.blog_db.find().sort('date', -1).limit(10).skip(skip)
+        else:
+            qry = {'type': self.POST_NS, 'public': 1}
+            found = self.blog_db.find(qry).sort('date', -1).limit(10).skip(skip)
         posts = []
-        for post in self.blog_db.find({'type': self.POST_NS, 'public': 1}
-                                     ).sort('date', -1).limit(10).skip(skip):
+        for post in found:
             approved_comments = []
             for comment in post['comments']:
                 if comment['approval'] == 1:
@@ -159,6 +164,20 @@ class Blog(object):
             post['comment_count'] = len(approved_comments)
             posts.append(post)
         return posts
+    
+    
+    def get_post_internal(self, url, ):
+        post = self.blog_db.find_one({'$or': [{'_id': url}, {'url': url}]})
+        if not post:
+            return False
+        return post
+    
+    def get_posts_all(self, page_num, ):
+        post = self.blog_db.find_one({'$or': [{'_id': url}, {'url': url}]})
+        if not post:
+            return False
+        return post
+        
     
     
     def get_recent(self, ):

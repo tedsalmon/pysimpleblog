@@ -52,21 +52,24 @@ Blog = {
 	});
     },
     Admin: {},
-    locateAndVerifyElements: function($prefix,$elements,$err_div_name){
+    locateAndVerifyElements: function($prefix,$elements,$err_div_name,$optional_items){
+	if(!$optional_items)
+	    $optional_items = [];
 	$return_data = {};
 	$.each($elements, function(num, $name){
 	    $_el_name = '#' + $prefix + $name;
 	    $el = $($_el_name);
 	    if($el){
 		$el_val = $el.val();
-		$return_data[$name] = ($el_val) ? $el_val : false;
+		if($el_val)
+		    $return_data[$name] = $el_val;
 		$el.val('');
 	    }else{
 		alert("Cannot find element " + $_el_name);
 	    }
 	});
 	for($i in $return_data){
-	    if(!$return_data[$i]){
+	    if(!$return_data[$i] && $optional_items.indexOf($return_data[$i]) != -1){
 		$('#'+$err_div_name).html("Please provide a " + $i.charAt(0).toUpperCase() + $i.slice(1));
 		$('#'+$err_div_name).addClass('alert-danger');
 		$('#'+$err_div_name).removeClass('hide');

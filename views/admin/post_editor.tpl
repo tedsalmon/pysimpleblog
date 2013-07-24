@@ -13,12 +13,22 @@
     </div>
     <div class="control-group">
 	<div class="controls">
-	    <input id="entry_tags" class="longer" type="text" placeholder="Tags, comma separated" {% if post_data %}value="{{', '.join(post_data['tags'])}}"{% endif %}/>
+	    <label for="entry_status">Publishing</label>
+	    <select id="entry_status">
+		<option value="0">Draft</option>
+		<option value="1">Published</option>
+	    </select>
 	</div>
-    </div>
-    <div class="control-group">
 	<div class="controls">
-	    <input checked="checked" type="checkbox" id="entry_public" /> Make Public
+	    <label for="entry_type">Type</label>
+	    <select id="entry_type">
+		<option value="0">Blog post</option>
+		<option value="1">Page</option>
+	    </select>
+	</div>
+	<div class="controls">
+	    <label for="entry_tags">Tags</label>
+	    <input id="entry_tags" class="longer" type="text" placeholder="Tags, comma separated" {% if post_data %}value="{{', '.join(post_data['tags'])}}"{% endif %}/>
 	</div>
     </div>
     <div class="control-group">

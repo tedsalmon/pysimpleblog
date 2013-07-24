@@ -1,9 +1,12 @@
 Blog.Admin = {
     init: function(){
-	console.log('Admin init');
+	this.bindUIActions();
+    },
+    bindUIActions: function(){
+	
 	$('#post_btn').click(function(){
-	    $elements = ['title', 'body', 'tags'];
-	    $new_post = Blog.locateAndVerifyElements('entry_', $elements, 'post_output');
+	    $elements = ['title', 'body', 'tags', 'status', 'type'];
+	    $new_post = Blog.locateAndVerifyElements('entry_', $elements, 'post_output', ['tags']);
 	    if (!$new_post) return false;
 	    $new_post['public'] = $('#entry_public').attr('checked');
 	    $.ajax({
@@ -17,10 +20,11 @@ Blog.Admin = {
 			$('#post_output').addClass('alert-danger');
 			$('#post_output').removeClass('hide');
                     }else{
-			window.location = '/'+$return_data['location'];
+			window.location = '/' + $return_data['location'];
                     }
                 }
             });
+	    return false;
 	});
 	
 	$('#delete_post').click(function(){
@@ -43,12 +47,12 @@ Blog.Admin = {
 	});
 	
 	$('#update_post_btn').click(function(){
-	    $elements = ['title', 'body', 'tags'];
+	    $elements = ['title', 'body', 'tags', 'status', 'type'];
 	    $edit_post = Blog.locateAndVerifyElements('entry_', $elements, 'post_output');
 	    if (!$edit_post) return false;
 	    $edit_post['public'] = $('#entry_public').attr('checked');
 	    $.ajax({
-                url: '/api/admin/post/'+$('#entry_id').val(),
+                url: '/api/admin/post/' + $('#entry_id').val(),
                 type: 'PUT',
                 contentType: 'application/json; charset=utf-8',
                 data: JSON.stringify($edit_post),

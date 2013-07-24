@@ -7,6 +7,7 @@
         <link href="/static/css/bootstrap.min.css" rel="stylesheet" />
         <link href="/static/css/bootstrap-responsive.min.css" rel="stylesheet" />
         <link href="/static/css/style.css" rel="stylesheet" />
+        <link rel="icon" href="/static/favicon.ico" type="image/x-ico" />
     </head>
     <body>
         <div class="blog-main container">
@@ -50,9 +51,8 @@
                                     <a href="/admin" class="dropdown-toggle" data-toggle="dropdown">Admin<b class="caret"></b></a>
                                     <ul class="dropdown-menu">
                                         <li><a href='/admin/new-post'>New Post</a></li>
-                                        <li><a href='/admin/comment-approver'>Comments</a></li>
-                                        <li><a>Special Pages</a></li>
-                                        <li><a>Users</a></li>
+                                        <li><a href='/admin/comment-approver'>Comment Management</a></li>
+                                        <li><a>User Management</a></li>
                                     </ul>
                                 </li>
                                 {% endif %}

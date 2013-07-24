@@ -8,7 +8,7 @@
 	{% for post in special[year] %}
 	<div class="span6">
 	    <span class="span3"><h4 class="inline">{{post['date'].strftime('%B %d')}}</h4></span>
-	    <span class="span8"><h6><a class="muted" href='#'>{{post['title']}}</h6></span>
+	    <span class="span8"><h5><a class="muted" href='#'>{{post['title']}}</a></h5></span>
 	</div>
 	{% endfor %}
     </div>
