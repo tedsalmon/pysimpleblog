@@ -29,12 +29,13 @@ Blog.Admin = {
 	
 	$('.delete-post').click(function(){
 	    $post_id = this.getAttribute('data-post-id');
+	    this.className += ' deleteable';
 	    $('#delete_modal').modal();
 	});
 	
 	$('#delete_confirm').click(function(){
 	    $.ajax({
-                url: '/api/post/'+ $('#delete_post').attr('data-post-id'),
+                url: '/api/post/'+ $('.deleteable').attr('data-post-id'),
                 type: 'DELETE',
                 contentType: 'application/json; charset=utf-8',
                 success: function($return_data) {
