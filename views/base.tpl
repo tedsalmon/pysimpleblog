@@ -4,8 +4,8 @@
         <meta http-equiv="content-type" content='text/html; charset=utf-8' charset='UTF-8'>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{% if sub_title %}{{sub_title}} | {%endif%}{{page_settings['title']}}</title>
-        <link href="/static/css/bootstrap.min.css" rel="stylesheet" />
-        <link href="/static/css/bootstrap-responsive.min.css" rel="stylesheet" />
+        <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.2/css/bootstrap.min.css" rel="stylesheet" />
+        <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.2/css/bootstrap-responsive.min.css" rel="stylesheet" />
         <link href="/static/css/style.css" rel="stylesheet" />
         <link rel="icon" href="/static/favicon.ico" type="image/x-ico" />
     </head>
@@ -122,8 +122,8 @@
         </div>
         {% endif %}
         <!-- Scripts -->
-        <script type='text/javascript' src='//ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js'></script>
-        <script type='text/javascript' src='/static/js/bootstrap.min.js'></script>
+        <script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js'></script>
+        <script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.2/js/bootstrap.min.js'></script>
         <script type="text/javascript" src="/static/js/main.js"></script>
         {% if page_settings['ga_key'] and page_settings['blog_url'] %}
         <script>

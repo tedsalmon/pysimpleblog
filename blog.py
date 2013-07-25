@@ -191,7 +191,7 @@ def api_login():
 
 @blog_app.route('/api/admin/post', method='POST',
                 apply=[auth_check(required=True, api=True)])
-def api_create_post(login_data=False, ):
+def api_post_create(login_data=False, ):
     return_data = {'error': False}
     fields = ['title', 'body', 'tags', 'status', 'type']
     post_data = sterilize(request.json, fields)
@@ -210,7 +210,7 @@ def api_create_post(login_data=False, ):
 
 @blog_app.route('/api/post', method='GET')
 @blog_app.route('/api/post/<page_num:int>', method='GET')
-def api_get_posts(page_num=1, ):
+def api_post_getmany(page_num=1, ):
     return_data = {'posts': []}
     return_data['posts'] = entries.get_posts(page_num)
     for i in xrange(0, len(return_data['posts'])):
@@ -222,7 +222,7 @@ def api_get_posts(page_num=1, ):
 
 
 @blog_app.route('/api/post/<post_id>', method='GET')
-def api_get_post(post_id, ):
+def api_post_get(post_id, ):
     post_data = {'post': {}}
     post = entries.get_post(post_id)
     if post:
@@ -236,7 +236,7 @@ def api_get_post(post_id, ):
 
 @blog_app.route('/api/post/<post_id>', method='DELETE',
                 apply=[auth_check(required=True, api=True)])
-def api_delete_post(post_id, login_data=False, ):
+def api_post_delete(post_id, login_data=False, ):
     return_data = {'error': False}
     if not entries.delete_post(post_id):
         return_data['error'] = 'Invalid Post ID'
@@ -246,7 +246,7 @@ def api_delete_post(post_id, login_data=False, ):
 
 @blog_app.route('/api/post/<post_id>', method='PUT',
                 apply=[auth_check(required=True, api=True)])
-def api_edit_post(post_id, login_data=False, ):
+def api_post_edit(post_id, login_data=False, ):
     return_data = {'error': False}
     req_data = request.json
     post = entries.get_post_internal(post_id)
@@ -269,7 +269,7 @@ def api_edit_post(post_id, login_data=False, ):
 
 
 @blog_app.route('/api/comment', method='POST')
-def api_create_comment():
+def api_comment_create():
     return_data = {'error': False}
     req_data = request.json
     post_data = entries.get_post(req_data['post_id'])
@@ -303,7 +303,7 @@ def api_comment_deny(comment_id, login_data=False, ):
 
 @blog_app.route('/api/link', method='POST',
                 apply=[auth_check(required=True, api=True)])
-def api_create_link(login_data=False, ):
+def api_link_create(login_data=False, ):
     return_data = {'error': False}
     data = sterilize(request.json, ['url','title'])
     if not data:
@@ -315,7 +315,7 @@ def api_create_link(login_data=False, ):
 
 @blog_app.route('/api/link/<link_id>', method='DELETE',
                 apply=[auth_check(required=True, api=True)])
-def api_delete_link(link_id, login_data=False, ):
+def api_link_delete(link_id, login_data=False, ):
     return_data = {'error': False}
     if not links.delete_link(link_id):
         return_data['error'] = 'Invalid Link ID'
@@ -324,7 +324,7 @@ def api_delete_link(link_id, login_data=False, ):
 
 @blog_app.route('/api/link/<link_id>', method='PUT',
                 apply=[auth_check(required=True, api=True)])
-def api_edit_link(link_id, login_data=False, ):
+def api_link_edit(link_id, login_data=False, ):
     return_data = {'error': False}
     data = sterilize(request.json, ['url','title'])
     if not data:
@@ -333,9 +333,9 @@ def api_edit_link(link_id, login_data=False, ):
     return return_data
     
 
-@blog_app.route('/api/admin/profile/changepassword', method='PUT',
+@blog_app.route('/api/changepassword/<username>', method='PUT',
                 apply=[auth_check(required=True, api=True)])
-def api_change_password(login_data=False, ):
+def api_password_edit(login_data=False, ):
     return_data = {'error': False}
     req_data = request.json
     fields = ['new', 'confirm', 'old']
@@ -375,10 +375,12 @@ def error_handler(error, ):
         pass
     if settings['debug'] and error.traceback:
         err_msg = '<pre>%s</pre>' % error.traceback
-    login_data = False 
+    login_data, blog_links = False, False
     if '404' in response.status:
+        blog_links = links.get_links()
         login_data = verify_auth()
-    return template('error', settings, error=err_msg, user_login=login_data, )
+    return template('error', settings, error=err_msg, user_login=login_data,
+                    blog_links=blog_links)
 
 def sterilize(data, required_fields, ):
     return_data = {}
