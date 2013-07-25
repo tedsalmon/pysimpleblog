@@ -1,9 +1,9 @@
 {% extends "base.tpl" %}
 {% block body %}
-<article class="blog-content">
+<article class="blog-content blog-page">
     <header>
         <hgroup>
-            <h2 class="muted">{{page['title']}}</h2>
+            <h2>{{page['title']}}</h2>
             {% if user_login %}
             <div class="blog-post-control">
                 <a title="Edit Post" class="icon-edit" href="/admin/post-editor/{{page['_id']}}"></a>

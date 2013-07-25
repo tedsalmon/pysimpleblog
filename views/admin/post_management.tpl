@@ -1,6 +1,12 @@
 {% extends "admin/main.tpl" %}
 {% block admin %}
-<table class="table table-condensed">
+<header>
+    <hgroup>
+        <h2>Post Manager</h2>
+    </hgroup>
+</header>
+<hr />
+<table class="table table-condensed table-striped table-hover">
     <thead>
         <tr>
             <th>Title</th>
@@ -23,7 +29,7 @@
         <td>{% if post['status'] %}Published{% else %}Draft{%endif%}</td>
         <td>{% if post['type'] %}Page{% else %}Post{%endif%}</td>
         <td><a title="Edit Post" class="icon-edit" href="/admin/post-editor/{{post['_id']}}"></a></td>
-        <td><a title="Delete Post" class="delete-post icon-ban-circle" href="#" data-post-id="{{post['_id']}}"></a></td>
+        <td><a title="Delete Post" class="delete-post icon-ban-circle" href="#" data-post-id="{{post['_id']}}" data-no-refresh="true"></a></td>
     </tr>
 {% endfor %}
     </tbody>

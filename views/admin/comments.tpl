@@ -1,6 +1,11 @@
 {% extends "admin/main.tpl" %}
 {% block admin %}
-<h3>Comments Pending Approval</h3>
+<header>
+    <hgroup>
+        <h2>Comment Manager</h2>
+    </hgroup>
+</header>
+<hr />
 {% if comments %}
 <div class="blog-comments">
     {% for comment in comments %}

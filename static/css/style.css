@@ -3,6 +3,7 @@ body{
 }
 article + article{
     border-top: 1px dotted #ddd;
+    padding-top: 1em;
 }
 .blog-comment + .blog-comment{
     border-top: 1px dotted #ddd;
@@ -28,10 +29,10 @@ article + article{
 }
 .blog-comments{
     width: 40%;
-    padding-bottom: .5em;
+    padding-bottom: .75em;
 }
 .blog-comment-count{
-    padding-bottom: .5em;
+    padding-bottom: 2em;
 }
 .blog-comment-body{
     padding: 9.5px;
@@ -58,7 +59,8 @@ article + article{
     margin-bottom: 1em;
 }
 .blog-footer{
-    padding: 10px 0px 15px 20px;
+    padding: 10px 0px 10px 20px;
+    margin-top: -1em;
     min-height: 20px;
     background-color: #f2f2f2;
     border-top: 1px solid #ddd;
@@ -74,6 +76,9 @@ article + article{
     border-radius: 0px;
     moz-border-radius: 0px;
     webkit-border-radius: 0px;
+}
+.blog-page{
+    padding-bottom: 1.25em;
 }
 .blog-pagination{
     padding: 10px 10px 0px 0px;

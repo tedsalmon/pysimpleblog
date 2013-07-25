@@ -1,7 +1,11 @@
 {% extends "base.tpl" %}
 {% block body %}
-<div class="blog-content">
-    <h1>Archives</h1>
+<div class="blog-content blog-page">
+    <header>
+        <hgroup>
+            <h2>Archives</h2>
+        </hgroup>
+    </header>
     {% for year in special %}
     <div class="row-fluid">
 	<h3>{{year}}</h3>

@@ -24,11 +24,11 @@
         </div>
     </article>
     {% endfor %}
+    {% if posts|length == 10 %}
     <div class="blog-pagination" class="span11">
-        {% if posts|length == 10 %}
         <a class="muted" href='/page/{{page_id+1}}'>{{'\u2190'}} Older</a>
-        {% endif %}
     </div>
+    {% endif %}
 </div>
 <div class="blog-sidebar span3">
     <h3>Recent Posts</h3>

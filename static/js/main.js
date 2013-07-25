@@ -39,8 +39,8 @@ Blog = {
                 contentType: 'application/json; charset=utf-8',
                 data: JSON.stringify($login_data),
                 success: function($return_data) {
-                    if($return_data['error']){
-			$('#login_output').html($return_data['error']);
+                    if($return_data.error){
+			$('#login_output').html($return_data.error);
 			$('#login_output').addClass('alert-danger');
 			$('#login_output').removeClass('hide');
                     }else{
@@ -51,7 +51,7 @@ Blog = {
 	    return false;
 	});
     },
-    Admin: {},
+    Admin: false,
     locateAndVerifyElements: function($prefix,$elements,$err_div_name,$optional_items){
 	if(!$optional_items)
 	    $optional_items = [];

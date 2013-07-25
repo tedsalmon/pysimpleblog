@@ -1,7 +1,7 @@
 pysimpleblog
 ============
 
-A Simple blogging framework written in Python with the help of Bottle and MongoDB as a backend
+A Simple blogging framework written in Python with the help of Bottle and MongoDB as a backend.
 
 Why?
 ===
@@ -21,7 +21,6 @@ Roadmap
 Currently, not all features that I would like have been implemented. Here's a list of features waiting to be implemented by order of urgency.
 
 * User Management
-* Custom links to external sites
 * Image uploads
 * More comprehensive setup via setup.py
 
@@ -43,4 +42,4 @@ Setup
 
 2. Edit settings.json with your settings
 
-3. Run <pre>python setup.py</pre> to create an account and the run <pre>python app.wsgi</pre> to start the web app in the Python debug server. The app.wsgi file is already mod_wsgi compatible.
+3. Run `python setup.py` to create an account and the `run python app.wsgi` to start the web app in the Python debug server. The app.wsgi file is already mod_wsgi compatible.

@@ -1,5 +1,17 @@
 {% extends "admin/main.tpl" %}
 {% block admin %}
+{% set types = {0: 'Blog Post', 1: 'Page' } %}
+{% set statuses = {0: 'Draft', 1: 'Published' } %}
+<header>
+    <hgroup>
+	{% if post_data %}
+        <h2>Edit Post</h2>
+	{% else %}
+	<h2>New Post</h2>
+	{% endif %}
+    </hgroup>
+</header>
+<hr />
 <form class="form left-indent" action="#">
     <div class="control-group">
 	<div class="controls">
@@ -13,17 +25,19 @@
     </div>
     <div class="control-group">
 	<div class="controls">
-	    <label for="entry_status">Publishing</label>
+	    <label for="entry_status">Publishing Status</label>
 	    <select id="entry_status">
-		<option value="0">Draft</option>
-		<option value="1">Published</option>
+		{% for status in statuses %}
+		<option {%if post_data %}{%if post_data['status'] == status %}selected{%endif%}{%endif%} value="{{status}}">{{statuses[status]}}</option>
+		{% endfor %}
 	    </select>
 	</div>
 	<div class="controls">
 	    <label for="entry_type">Type</label>
 	    <select id="entry_type">
-		<option value="0">Blog post</option>
-		<option value="1">Page</option>
+		{% for type in types %}
+		<option {%if post_data %}{%if post_data['type'] == type %}selected{%endif%}{%endif%} value="{{type}}">{{types[type]}}</option>
+		{% endfor %}
 	    </select>
 	</div>
 	<div class="controls">

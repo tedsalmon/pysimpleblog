@@ -68,14 +68,15 @@ class Blog(object):
             "date": now,
             "type": data_ns,
             "tags": data['tags'],
-            "status": int(bool(data['status'])),
+            "status": int(data['status']),
             "comments": []}
         self.blog_db.insert(post_data)
         return '%s/%s' % (now.strftime('%Y'), url_slug)
     
     
     def delete_post(self, post_id, ):
-        return self.blog_db.remove({"_id": post_id})
+        res = self.blog_db.remove({"_id": post_id})
+        return bool(res['n'])
     
     
     def deny_comment(self, comment_id, ):
@@ -98,7 +99,8 @@ class Blog(object):
     
     def get_archive(self, ):
         return_data = {}
-        posts = self.blog_db.find({'type': self.POST_NS}).sort('date', -1)
+        posts = self.blog_db.find({'type': self.POST_NS,
+                                   'status': 1}).sort('date', -1)
         for post in posts:
             year = post['date'].strftime('%Y')
             if year not in return_data:
@@ -109,7 +111,7 @@ class Blog(object):
     
     def get_by_tags(self, tags, ):
         posts = []
-        tags_q = {'tags': {'$in': tags}, 'type': self.POST_NS}
+        tags_q = {'tags': {'$in': tags}, 'type': self.POST_NS, 'status': 1}
         posts_found = self.blog_db.find(tags_q).sort("date", -1).limit(10)
         for post in posts_found:
             approved_comments = []
@@ -212,10 +214,21 @@ class Links(object):
     def __init__(self, db_conn=False, ):
         self._client = db_conn if db_conn else DB_CONN
         self._db_handle = self._client[DB_SETTINGS['name']]
+        self.users = self._db_handle.users
         self.links = self._db_handle.links
     
-    def add_link(self, url, name, ):
-        return self.links.insert({'url': url, 'title': name,})
+    def _create_id(self, ):
+        time = int(UTCDate().strftime("%s"))
+        return b36encode(time+randint(0,9001)).lower()
+    
+    def create_link(self, data, author, ):
+        link_id = self._create_id()
+        if not self.links.insert({'_id': link_id,
+                                  'url': data['url'],
+                                  'title': data['title'],
+                                  'author': author}):
+            return False
+        return link_id
     
     def delete_link(self, link_id, ):
         return self.links.remove({"_id": link_id})
@@ -223,9 +236,12 @@ class Links(object):
     def edit_link(self, link_data, ):
         return self.links.update(link_data)
     
-    def get_list(self, ):
+    def get_links(self, cannonical_author=False, ):
         links = []
         for link in self.links.find():
+            if cannonical_author:
+                author = self.users.find_one({"_id": link['author']})
+                link['author'] = author['display_name']
             links.append(link)
         return links
     

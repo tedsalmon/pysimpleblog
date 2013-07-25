@@ -44,15 +44,15 @@
                             <ul class="nav">
                                 <li><a href="/">Home</a></li>
                                 <li><a href="/archive">Archives</a></li>
-                                <li><a href="/special/about">About Me</a></li>
+                                {%for link in blog_links %}
+                                <li><a href="{{link['url']}}">{{link['title']}}</a></li>
+                                {%endfor%}
                                 {%if user_login %}
                                 <li class="divider-vertical"></li>
                                 <li class="dropdown">
                                     <a href="/admin" class="dropdown-toggle" data-toggle="dropdown">Admin<b class="caret"></b></a>
                                     <ul class="dropdown-menu">
-                                        <li><a href='/admin/new-post'>New Post</a></li>
-                                        <li><a href='/admin/comment-approver'>Comment Management</a></li>
-                                        <li><a>User Management</a></li>
+                                        {% include 'admin/admin_links.tpl' %}
                                     </ul>
                                 </li>
                                 {% endif %}
@@ -114,7 +114,7 @@
                 <form class="form text-center" action="#">
                     <div class="control-group">
                         <div class="controls">
-                            <a id="delete_confirm" class="btn" href="#">Yes</a><a class="left-space btn" href="#" data-dismiss="modal">No</a>
+                            <a id="delete_confirm" class="btn" href="#" data-dismiss="modal">Yes</a><a class="left-space btn" href="#" data-dismiss="modal">No</a>
                         </div>
                     </div>
                 </form>

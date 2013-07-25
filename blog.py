@@ -16,11 +16,17 @@ settings = Settings()
 
 def verify_auth():
     s_id = request.get_cookie('session_id')
-    if not s_id:
+    auth = request.auth
+    if not s_id and not auth:
         return False
     login_data = sessions.check(s_id)
     if login_data:
         return login_data
+    if auth:
+        user, passwd = auth
+        login_data = users.verify_login(user, passwd)
+        if login_data:
+            return login_data['username']
     return False
 
 
@@ -52,8 +58,9 @@ def show_listing(login_data=False, page_id=None,):
     if not posts:
         abort(404, "Not Found")
     recent = entries.get_recent()
-    return template('main', settings, page_id=page_id,
-                    user_login=login_data,posts=posts, recent_posts=recent)
+    return template('main', settings, page_id=page_id, posts=posts,
+                    user_login=login_data,blog_links=links.get_links(),
+                    recent_posts=recent)
 
 
 @blog_app.route('/<url:re:[a-z0-9]{6}>', apply=[auth_check()])
@@ -63,13 +70,15 @@ def show_post(url, login_data=False, year=False,):
     if not post_data:
         abort(404, "Not Found")
     return template('post', settings, sub_title=post_data['title'],
-                    post=post_data, user_login=login_data)
+                    post=post_data, user_login=login_data,
+                    blog_links=links.get_links())
 
 
 @blog_app.route('/archive', apply=[auth_check()])
 def show_archives(login_data=False,):
     return template('archive', settings, sub_title='Archives',
-                    user_login=login_data, special=entries.get_archive())
+                    user_login=login_data, special=entries.get_archive(),
+                    blog_links=links.get_links())
 
 
 @blog_app.route('/special/<page_name>', apply=[auth_check()])
@@ -78,7 +87,8 @@ def show_special_page(page_name, login_data=False, ):
     if not page:
         abort(404, "Not Found")
     return template('special', settings, sub_title=page['title'],
-                    user_login=login_data, page=page)
+                    user_login=login_data, page=page,
+                    blog_links=links.get_links())
 
 
 @blog_app.route('/tags/<tag_name>', apply=[auth_check()])
@@ -86,7 +96,8 @@ def show_tags(tag_name, login_data=False, ):
     tag_name = tag_name.replace('-',' ')
     post_by_tags = entries.get_by_tags([tag_name])
     return template('tags', settings, sub_title='Posts Tagged %s' % tag_name,
-                    tag=tag_name, posts=post_by_tags, user_login=login_data)
+                    tag=tag_name, posts=post_by_tags, user_login=login_data,
+                    blog_links=links.get_links())
 
 
 @blog_app.route('/logout', apply=[auth_check()])
@@ -101,19 +112,15 @@ def logout(login_data=False, ):
 # Admin functions
 @blog_app.route('/admin', apply=[auth_check(required=True)])
 def show_admin(login_data=False, ):
-    return template('admin/main', settings, user_login=login_data)
+    return template('admin/main', settings, user_login=login_data,
+                    blog_links=links.get_links())
 
 
 @blog_app.route('/admin/new-post', apply=[auth_check(required=True)])
 def show_new_post(login_data=False, ):
-    return template('admin/post_editor', settings, user_login=login_data)
+    return template('admin/post_editor', settings, user_login=login_data,
+                    blog_links=links.get_links())
 
-
-@blog_app.route('/admin/comment-approver', apply=[auth_check(required=True)])
-def show_pending_comments(login_data=False, ):
-    comments = entries.get_unapproved_comments()
-    return template('admin/comments', settings, user_login=login_data,
-                    comments=comments, )
 
 # @todo Rename edit-post
 @blog_app.route('/admin/post-editor/<post_id:re:[a-z0-9]{6}>',
@@ -123,7 +130,7 @@ def show_post_editor(post_id, login_data=False, ):
     if not post:
         abort(404, "Not Found")
     return template('admin/post_editor', settings, user_login=login_data,
-                    post_data=post, )
+                    post_data=post, blog_links=links.get_links())
 
 
 @blog_app.route('/admin/manage-posts', apply=[auth_check(required=True)])
@@ -134,7 +141,19 @@ def show_post_manager(page_num=1, login_data=False, ):
     if not posts:
         abort(404, "Not Found")
     return template('admin/post_management', settings, user_login=login_data,
-                    posts=posts)
+                    posts=posts, blog_links=links.get_links())
+
+
+@blog_app.route('/admin/comment-approver', apply=[auth_check(required=True)])
+def show_pending_comments(login_data=False, ):
+    comments = entries.get_unapproved_comments()
+    return template('admin/comments', settings, user_login=login_data,
+                    comments=comments, blog_links=links.get_links())
+
+@blog_app.route('/admin/manage-links', apply=[auth_check(required=True)])
+def show_link_manager(login_data=False, ):
+    return template('admin/link_management', settings, user_login=login_data,
+                    links=links.get_links(True), blog_links=links.get_links())
 
 
 @blog_app.route('/admin/view-profile', apply=[auth_check(required=True)])
@@ -143,9 +162,14 @@ def show_profile(login_data=False, ):
     if not profile_data:
         abort("404", "Not Found")
     return template("admin/profile_editor", settings, user_login=login_data,
-                    profile_data=profile_data, )
+                    profile_data=profile_data, blog_links=links.get_links())
 
-# API
+#
+# RESTful API Begins here
+# Read-only functions:
+# GET => /api/post, GET => /api/posts, POST => /api/comment
+# All other functions require BASIC Auth or a Session ID Cookie
+#
 @blog_app.route('/api/login', method='POST')
 def api_login():
     return_data = {'error': False}
@@ -163,24 +187,26 @@ def api_login():
     response.set_cookie('session_id', session['session_id'],
                         expires=session['expiry'], path='/', )
     return return_data
+    
 
-@blog_app.route('/api/comment', method='POST')
-def api_create_comment():
+@blog_app.route('/api/admin/post', method='POST',
+                apply=[auth_check(required=True, api=True)])
+def api_create_post(login_data=False, ):
     return_data = {'error': False}
-    req_data = request.json
-    post_data = entries.get_post(req_data['post_id'])
-    if not req_data['comment']:
-        return_data['error'] = 'No comment given'
-    for key in req_data:
-        req_data[key] = str(utils.escape(req_data[key]))
-    comment = {'name': req_data['name'],
-               'email': req_data['email'],
-               'comment': req_data['comment'],}
-    if not entries.create_comment(comment, req_data['post_id'], post_data):
-        return_data['error'] = 'Parent post not found'
-    else:
-        return_data['msg'] = 'Comment submitted for approval.'
+    fields = ['title', 'body', 'tags', 'status', 'type']
+    post_data = sterilize(request.json, fields)
+    if not post_data:
+        return_data['error'] = 'Missing Parameters'
+        return return_data
+    post_data['tags'] = [tag.strip() for tag in post_data['tags'].split(',')]
+    NS = 0 if post_data['type'] == '0' else 1
+    new_post = entries.create_post(post_data, login_data, NS)
+    if not new_post:
+        return_data['error'] = 'Failed to create post!'
+        return return_data
+    return_data['location'] = new_post
     return return_data
+
 
 @blog_app.route('/api/post', method='GET')
 @blog_app.route('/api/post/<page_num:int>', method='GET')
@@ -206,40 +232,6 @@ def api_get_post(post_id, ):
             comment['date'] = str(comment['date'])
         post_data['post'] = post
     return post_data
-
-
-# Admin API - Auth required
-@blog_app.route('/api/comment/<comment_id>', method='PUT',
-                apply=[auth_check(required=True, api=True)])
-def api_comment_approve(comment_id, login_data=False, ):
-    entries.approve_comment(comment_id)
-    return {}
-
-
-@blog_app.route('/api/comment/<comment_id>', method='DELETE',
-                apply=[auth_check(required=True, api=True)])
-def api_comment_deny(comment_id, login_data=False, ):
-    entries.deny_comment(comment_id)
-    return {}
-    
-
-@blog_app.route('/api/admin/post', method='POST',
-                apply=[auth_check(required=True, api=True)])
-def api_create_post(login_data=False, ):
-    return_data = {'error': False}
-    fields = ['title', 'body', 'tags', 'status', 'type']
-    post_data = sterilize(request.json, fields)
-    if not post_data:
-        return_data['error'] = 'Missing Parameters'
-        return return_data
-    post_data['tags'] = [tag.strip() for tag in post_data['tags'].split(',')]
-    NS = 0 if post_data['type'] == '0' else 1
-    new_post = entries.create_post(post_data, login_data, NS)
-    if not new_post:
-        return_data['error'] = 'Failed to create post!'
-        return return_data
-    return_data['location'] = new_post
-    return return_data
 
 
 @blog_app.route('/api/post/<post_id>', method='DELETE',
@@ -275,6 +267,71 @@ def api_edit_post(post_id, login_data=False, ):
     return_data['location'] = url
     return return_data
 
+
+@blog_app.route('/api/comment', method='POST')
+def api_create_comment():
+    return_data = {'error': False}
+    req_data = request.json
+    post_data = entries.get_post(req_data['post_id'])
+    if not req_data['comment']:
+        return_data['error'] = 'No comment given'
+    for key in req_data:
+        req_data[key] = str(utils.escape(req_data[key]))
+    comment = {'name': req_data['name'],
+               'email': req_data['email'],
+               'comment': req_data['comment'],}
+    if not entries.create_comment(comment, req_data['post_id'], post_data):
+        return_data['error'] = 'Parent post not found'
+    else:
+        return_data['msg'] = 'Comment submitted for approval.'
+    return return_data
+
+
+@blog_app.route('/api/comment/<comment_id>', method='PUT',
+                apply=[auth_check(required=True, api=True)])
+def api_comment_approve(comment_id, login_data=False, ):
+    entries.approve_comment(comment_id)
+    return True
+
+
+@blog_app.route('/api/comment/<comment_id>', method='DELETE',
+                apply=[auth_check(required=True, api=True)])
+def api_comment_deny(comment_id, login_data=False, ):
+    entries.deny_comment(comment_id)
+    return True
+
+
+@blog_app.route('/api/link', method='POST',
+                apply=[auth_check(required=True, api=True)])
+def api_create_link(login_data=False, ):
+    return_data = {'error': False}
+    data = sterilize(request.json, ['url','title'])
+    if not data:
+        return_data['error'] = 'Missing Parameters'
+    else:
+        link_id = links.create_link(data, login_data)
+    return return_data
+
+
+@blog_app.route('/api/link/<link_id>', method='DELETE',
+                apply=[auth_check(required=True, api=True)])
+def api_delete_link(link_id, login_data=False, ):
+    return_data = {'error': False}
+    if not links.delete_link(link_id):
+        return_data['error'] = 'Invalid Link ID'
+    return return_data
+
+
+@blog_app.route('/api/link/<link_id>', method='PUT',
+                apply=[auth_check(required=True, api=True)])
+def api_edit_link(link_id, login_data=False, ):
+    return_data = {'error': False}
+    data = sterilize(request.json, ['url','title'])
+    if not data:
+        return_data['error'] = 'Missing Parameters'
+    links.edit_link(link_id, data)
+    return return_data
+    
 
 @blog_app.route('/api/admin/profile/changepassword', method='PUT',
                 apply=[auth_check(required=True, api=True)])

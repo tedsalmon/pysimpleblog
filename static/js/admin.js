@@ -42,7 +42,14 @@ Blog.Admin = {
                     if($return_data['error'])
 			alert($return_data['error']);
                     else
-			window.location = '/';
+			if($('.deleteable').attr('data-no-refresh') == 'true'){
+			    $tr = $('.deleteable').closest('tr');
+			    $tr.fadeOut(400, function(){
+				$tr.remove();
+			    });
+			}else{
+			    window.location = '/';
+			}
                 }
             });
 	});
@@ -68,6 +75,43 @@ Blog.Admin = {
                 }
             });
 	});
+
+	
+	$('.comment-btn').click(function(){
+	    $comment_id = this.getAttribute('data-comment-id');
+	    $comment_div = $('#comment_'+$comment_id);
+	    $comment_approval = this.getAttribute('data-approval');
+	    $.ajax({
+                url: '/api/comment/'+$comment_id,
+                type: ($comment_approval == '1') ? 'PUT' : 'DELETE',
+                contentType: 'application/json; charset=utf-8',
+                success: function($return_data) {
+                    if($return_data['error'])
+			alert($return_data['error']);
+                    else
+			$comment_div.remove();
+                }
+            });
+	});
+	
+	
+	$('#link_add').click(function(){
+	    $elements = ['url', 'title'];
+	    $add_link = Blog.locateAndVerifyElements('link_', $elements, 'link_output');
+	    if (!$add_link) return false;
+	    $.ajax({
+                url: '/api/link',
+                type: 'POST',
+		data: JSON.stringify($add_link),
+                contentType: 'application/json; charset=utf-8',
+                success: function($return_data) {
+                    if($return_data.error)
+			alert($return_data.error);
+                    else
+			console.log('No Error');//location.reload();
+                }
+            });
+	});
 	
 	$('#update_password_btn').click(function(){
 	    $elements = ['new', 'old', 'confirm'];
@@ -82,24 +126,6 @@ Blog.Admin = {
 			alert($return_data['error']);
                     else
 			window.location = '/';
-                }
-            });
-	});
-	
-	$('.comment-btn').click(function(){
-	    $comment_id = this.getAttribute('data-comment-id');
-	    $comment_div = $('#comment_'+$comment_id);
-	    $comment_approval = this.getAttribute('data-approval');
-	    console.log($comment_div);
-	    $.ajax({
-                url: '/api/comment/'+$comment_id,
-                type: ($comment_approval == '1') ? 'PUT' : 'DELETE',
-                contentType: 'application/json; charset=utf-8',
-                success: function($return_data) {
-                    if($return_data['error'])
-			alert($return_data['error']);
-                    else
-			$comment_div.remove();
                 }
             });
 	});
