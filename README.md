@@ -18,8 +18,7 @@ Features
 Roadmap
 =======
 
-Currently, not all features that I would like have been implemented. Here's a list of features waiting to be implemented by order of urgency.
-
+* Improve JavaScript
 * User Management
 * Image uploads
 * More comprehensive setup via setup.py
@@ -33,6 +32,7 @@ Requirements
 * PyMongo
 * Python Creole
 
+
 * MongoDB 2.2.0+
 
 Setup
@@ -42,4 +42,4 @@ Setup
 
 2. Edit settings.json with your settings
 
-3. Run `python setup.py` to create an account and the `run python app.wsgi` to start the web app in the Python debug server. The app.wsgi file is already mod_wsgi compatible.
+3. Run `python setup.py` to create an account and the run `python app.wsgi` to start the web app in the Python debug server. The app.wsgi file is already mod_wsgi compatible.
