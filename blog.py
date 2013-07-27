@@ -19,7 +19,7 @@ def verify_auth():
     auth = request.auth
     if not s_id and not auth:
         return False
-    login_data = sessions.check(s_id)
+    login_data = sessions.verify_session(s_id)
     if login_data:
         return login_data
     if auth:
@@ -104,7 +104,7 @@ def show_tags(tag_name, login_data=False, ):
 def logout(login_data=False, ):
     if login_data:
         s_id = request.get_cookie('session_id')
-        sessions.expire(s_id)
+        sessions.expire_session(s_id)
         response.delete_cookie(s_id)
     redirect('/')
 
@@ -183,7 +183,7 @@ def api_login():
         return_data['error'] = users.error
         return return_data
     # Start Session
-    session = sessions.new(user['_id'])
+    session = sessions.create_session(user['_id'])
     response.set_cookie('session_id', session['session_id'],
                         expires=session['expiry'], path='/', )
     return return_data

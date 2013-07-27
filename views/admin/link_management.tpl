@@ -23,8 +23,8 @@
         <td>{{link['title']}}</td>
         <td>{{link['url']}}</td>
         <td>{{link['author']}}</td>
-        <td><a title="Edit Post" class="icon-edit" href="/admin/post-editor/{{link['_id']}}"></a></td>
-        <td><a title="Delete Post" class="delete-post icon-ban-circle" href="#" data-post-id="{{link['_id']}}" data-no-refresh="true"></a></td>
+        <td><a title="Edit Link" class="icon-edit"></a></td>
+        <td><a title="Delete Link" class="delete-link icon-ban-circle" href="#" data-post-id="{{link['_id']}}" data-no-refresh="true"></a></td>
     </tr>
 {% endfor %}
     </tbody>

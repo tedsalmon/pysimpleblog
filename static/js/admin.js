@@ -108,7 +108,22 @@ Blog.Admin = {
                     if($return_data.error)
 			alert($return_data.error);
                     else
-			console.log('No Error');//location.reload();
+			location.reload();
+                }
+            });
+	});
+	
+	$('.delete-link').click(function(){
+	    $link_id = $(this).attr('data-post-id');
+	    $.ajax({
+                url: '/api/link/'+$link_id,
+                type: 'DELETE',
+                contentType: 'application/json; charset=utf-8',
+                success: function($return_data) {
+                    if($return_data.error)
+			alert($return_data.error);
+                    else
+			location.reload();
                 }
             });
 	});

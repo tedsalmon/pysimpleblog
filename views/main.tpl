@@ -17,10 +17,10 @@
             </hgroup>
         </header>
         <div>{{post['body']}}</div>
-        <div class="blog-tags">Tagged {% for tag in post['tags'] %}{{'<a class="link-underline muted" href="/tags/%s">%s</a> ' % (tag.strip().replace(' ','-'), tag)}}{% endfor %}</div>
+        <div class="blog-tags"><b class="icon-tags" title="Tags"></b> {% for tag in post['tags'] %}{{'<a class="link-underline muted" href="/tags/%s">%s</a> ' % (tag.strip().replace(' ','-'), tag)}}{% endfor %}</div>
         <div class="blog-comment-count">
-            <b class="icon-comment"></b>
-            <a class="muted" href="/{{year}}/{{post['url']}}#comments">{{post['comment_count']}} comments</a>
+            <b class="icon-comment" title="Comments"></b>
+            <a class="muted" href="/{{year}}/{{post['url']}}#comments">{{post['comment_count']}} comment{% if post['comment_count'] > 1 %}s{%endif%}</a>
         </div>
     </article>
     {% endfor %}

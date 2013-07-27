@@ -30,9 +30,10 @@ class Blog(object):
     
     
     def approve_comment(self, comment_id, ):
-        return self.blog_db.update({"comments":
+        res = self.blog_db.update({"comments":
                                    {"$elemMatch": {"id": comment_id}}},
                                    {"$set": {"comments.$.approval": 1}})
+        return res['n']
     
     
     def create_comment(self, comment_data, post_id, post_data=None, ):
@@ -43,8 +44,9 @@ class Blog(object):
         comment_data['id'] = self._create_id()
         comment_data['date'] = UTCDate()
         comment_data['approval'] = 0
-        return self.blog_db.update({"_id": post_data['_id']},
+        res = self.blog_db.update({"_id": post_data['_id']},
                             {"$push": {"comments": comment_data}})
+        return res['n']
     
 
     def create_post(self, data, author, data_ns, url_slug=None, ):
@@ -76,14 +78,14 @@ class Blog(object):
     
     def delete_post(self, post_id, ):
         res = self.blog_db.remove({"_id": post_id})
-        return bool(res['n'])
+        return res['n']
     
     
     def deny_comment(self, comment_id, ):
-        return self.blog_db.update({"comments":
+        res = self.blog_db.update({"comments":
                                    {"$elemMatch": {"id": comment_id}}},
                                    {"$set": {"comments.$.approval": -1}})
-    
+        return res['n']
     
     def edit_post(self, post_id, data, ):
         if type(data['tags']) != list:
@@ -131,7 +133,7 @@ class Blog(object):
         if year:
             query = {'url': url,
                      'date': {'$gte': datetime(year,1,1),
-                               '$lte':datetime(year,12,31)},
+                              '$lte': datetime(year,12,31)},
                      'status': 1, 'type': self.POST_NS
                     }
         else:
@@ -173,22 +175,23 @@ class Blog(object):
     
     def get_post_internal(self, url, ):
         post = self.blog_db.find_one({'$or': [{'_id': url}, {'url': url}]})
-        if not post:
-            return False
         return post
+    
     
     def get_posts_all(self, page_num, ):
         post = self.blog_db.find_one({'$or': [{'_id': url}, {'url': url}]})
-        if not post:
-            return False
         return post
-        
     
     
     def get_recent(self, ):
-        return self.blog_db.find({'type': self.POST_NS, 'status': 1},
+        q = self.blog_db.find({'type': self.POST_NS, 'status': 1},
                                  fields=['url', 'title']
                                  ).sort('date', -1).limit(10)
+        recent_posts = []
+        for post in q:
+            recent_posts.append(post)
+        return recent_posts
+
     
     def get_page(self, name, ):
         post = self.blog_db.find_one({'url': name, 'type': self.PAGE_NS})
@@ -216,25 +219,31 @@ class Links(object):
         self._db_handle = self._client[DB_SETTINGS['name']]
         self.users = self._db_handle.users
         self.links = self._db_handle.links
+
     
     def _create_id(self, ):
         time = int(UTCDate().strftime("%s"))
         return b36encode(time+randint(0,9001)).lower()
+
     
     def create_link(self, data, author, ):
         link_id = self._create_id()
-        if not self.links.insert({'_id': link_id,
-                                  'url': data['url'],
-                                  'title': data['title'],
-                                  'author': author}):
-            return False
+        self.links.insert({'_id': link_id,
+                           'url': data['url'],
+                           'title': data['title'],
+                           'author': author})
         return link_id
+
     
     def delete_link(self, link_id, ):
-        return self.links.remove({"_id": link_id})
+        res = self.links.remove({"_id": link_id})
+        return res['n']
+
     
     def edit_link(self, link_data, ):
-        return self.links.update(link_data)
+        res = self.links.update(link_data)
+        return res['n']
+    
     
     def get_links(self, cannonical_author=False, ):
         links = []
@@ -256,18 +265,9 @@ class Sessions(object):
     
     def _clean_up(self, ):
         return self.session_db.remove({"expiry": {"$lte": UTCDate()}})
-        
-    def check(self, session_id):
-        self._clean_up()
-        session = self.session_db.find_one({"session_id": session_id})
-        if session:
-            return session['user_id']
-        return False
     
-    def expire(self, s_id):
-        return self.session_db.remove({"session_id": s_id})    
     
-    def new(self, user_id, ):
+    def create_session(self, user_id, ):
         self._clean_up()
         expiry = UTCDate(-86400)
         s_id = sha256("%s%s" % (expiry,randint(0, 9000))).hexdigest()
@@ -277,6 +277,19 @@ class Sessions(object):
                         }
         self.session_db.insert(user_session)
         return user_session
+    
+    
+    def expire_session(self, s_id):
+        res = self.session_db.remove({"session_id": s_id})
+        return res['n']
+    
+    
+    def verify_session(self, session_id):
+        self._clean_up()
+        session = self.session_db.find_one({"session_id": session_id})
+        if session:
+            return session['user_id']
+        return session
     
     
 class Users(object):
