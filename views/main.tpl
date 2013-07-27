@@ -1,7 +1,7 @@
 {% extends "base.tpl" %}
 {% block body %}
 <div class="blog-content divider-right span9">
-    {% for post in posts %}
+{% for post in posts %}
     {% set year = post['date'].strftime('%Y') %}
     <article>
         <header>
@@ -23,12 +23,15 @@
             <a class="muted" href="/{{year}}/{{post['url']}}#comments">{{post['comment_count']}} comment{% if post['comment_count'] > 1 %}s{%endif%}</a>
         </div>
     </article>
-    {% endfor %}
-    {% if posts|length == 10 %}
+{% endfor %}
+{% if posts|length == 10 %}
     <div class="blog-pagination" class="span11">
         <a class="muted" href='/page/{{page_id+1}}'>{{'\u2190'}} Older</a>
+        {% if page_id > 1 %}
+        <a class="muted" href='/page/{{page_id-1}}'>{{'\u2192'}} Newer</a>
+        {% endif %}
     </div>
-    {% endif %}
+{% endif %}
 </div>
 <div class="blog-sidebar span3">
     <h3>Recent Posts</h3>
