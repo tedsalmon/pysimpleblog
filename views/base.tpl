@@ -3,7 +3,7 @@
     <head>
         <meta http-equiv="content-type" content='text/html; charset=utf-8' charset='UTF-8'>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{% if sub_title %}{{sub_title}} | {%endif%}{{page_settings['title']}}</title>
+        <title>{% if sub_title %}{{sub_title}} | {%endif%}{{site_title}}</title>
         <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.2/css/bootstrap.min.css" rel="stylesheet" />
         <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.2/css/bootstrap-responsive.min.css" rel="stylesheet" />
         <link href="/static/css/style.css" rel="stylesheet" />
@@ -13,12 +13,12 @@
         <div class="blog-main container">
             <header class="blog-banner">
                 <hgroup>
-                    <h2 class="blog-brand"><a class="muted blog-brand-link" href="/">{{page_settings['header']}}</a></h2>
-                    <h5 class="muted">{{page_settings['subheader']}}</h5>
-                    {% if user_login %}
+                    <h2 class="blog-brand"><a class="muted blog-brand-link" href="/">{{site_header}}</a></h2>
+                    <h5 class="muted">{{site_subheader}}</h5>
+                    {% if user_id %}
                     <span class="dropdown visible-desktop pull-right blog-user">
                         <span class="icon-white icon-user"></span>
-                        <a class="dropdown-toggle muted" data-toggle="dropdown" href="#">Hello, {{user_login}} <b class="muted-border caret"></b></a>
+                        <a class="dropdown-toggle muted" data-toggle="dropdown" href="#">Hello, {{user_id}} <b class="muted-border caret"></b></a>
                         <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
                             <li><a href="/admin/view-profile">My Profile</a></li>
                             <li><a href="/logout">Logout</a></li>
@@ -44,12 +44,12 @@
                             <ul class="nav">
                                 <li><a href="/">Home</a></li>
                                 <li><a href="/archive">Archives</a></li>
-                                {% if blog_links %}
-                                {%for link in blog_links %}
+                                {% if nav_links %}
+                                {%for link in nav_links %}
                                 <li><a href="{{link['url']}}">{{link['title']}}</a></li>
                                 {%endfor%}
                                 {% endif %}
-                                {%if user_login %}
+                                {%if user_id %}
                                 <li class="divider-vertical"></li>
                                 <li class="dropdown">
                                     <a href="/admin" class="dropdown-toggle" data-toggle="dropdown">Admin<b class="caret"></b></a>
@@ -74,7 +74,7 @@
                     {% endblock %}
                 </div>
             </div>
-            <footer class="blog-footer">{{page_settings['footer']}}</footer>
+            <footer class="blog-footer">{{site_footer}}</footer>
         <!-- Modals -->
         <div id="login_modal" class="modal hide fade">
             <div class="modal-header">
@@ -127,17 +127,17 @@
         <script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js'></script>
         <script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.2/js/bootstrap.min.js'></script>
         <script type="text/javascript" src="/static/js/main.js"></script>
-        {% if page_settings['ga_key'] and page_settings['blog_url'] %}
+        {% if site_ga_key and site_url %}
         <script>
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
             (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
             m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
             })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-            ga('create', '{{page_settings['ga_key']}}', '{{page_settings['blog_url']}}');
+            ga('create', '{{site_ga_key}}', '{{site_url}}');
             ga('send', 'pageview');
         </script>
         {% endif %}
-        {% if user_login %}
+        {% if user_id %}
         <script type="text/javascript" src="/static/js/admin.js"></script>
         {% endif %}
         <script>

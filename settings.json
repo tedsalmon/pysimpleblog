@@ -1,12 +1,10 @@
 {
-    "page_settings": {
-        "title": "Your Blog",
-        "header": "This is a Blog!",
-        "subheader": "I like cats",
-        "footer": "Default Footer",
-        "blog_url": "",
-        "ga_key": ""
-    },
+    "site_title": "Your Blog",
+    "site_header": "This is a Blog!",
+    "site_subheader": "I like cats",
+    "site_footer": "Default Footer",
+    "site_url": "",
+    "site_ga_key": "",
     "database":{
         "address": "127.0.0.1",
         "username": "",

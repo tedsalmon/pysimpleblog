@@ -185,7 +185,7 @@ class Blog(object):
     
     def get_recent(self, ):
         q = self.blog_db.find({'type': self.POST_NS, 'status': 1},
-                                 fields=['url', 'title']
+                                 fields=['url', 'title', 'date']
                                  ).sort('date', -1).limit(10)
         recent_posts = []
         for post in q:

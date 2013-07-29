@@ -4,23 +4,12 @@
 {% for post in posts %}
     {% set year = post['date'].strftime('%Y') %}
     <article>
-        <header>
-            <hgroup>
-                <h2><a class="muted" href="/{{year}}/{{post['url']}}">{{post['title']}}</a></h2>
-                <h5>by {{post['author']}} on {{post['date'].strftime('%m-%d-%Y %H:%M')}}</h5>
-                {% if user_login %}
-                <div class="blog-post-control">
-                    <a title="Edit Post" class="icon-edit" href="/admin/post-editor/{{post['_id']}}"></a>
-                    <a title="Delete Post" class="delete-post icon-ban-circle" href="#" data-post-id="{{post['_id']}}"></a>
-                </div>
-                {% endif %}
-            </hgroup>
-        </header>
-        <div>{{post['body']}}</div>
+        {% set post_show_link = True %}
+        {% include 'post_template.tpl' %}
         <div class="blog-tags"><b class="icon-tags" title="Tags"></b> {% for tag in post['tags'] %}{{'<a class="link-underline muted" href="/tags/%s">%s</a> ' % (tag.strip().replace(' ','-'), tag)}}{% endfor %}</div>
         <div class="blog-comment-count">
             <b class="icon-comment" title="Comments"></b>
-            <a class="muted" href="/{{year}}/{{post['url']}}#comments">{{post['comment_count']}} comment{% if post['comment_count'] > 1 %}s{%endif%}</a>
+            <a class="muted" href="/{{year}}/{{post['url']}}#comments">{{post['comment_count']}} comment{% if post['comment_count'] > 1 or post['comment_count'] == 0 %}s{%endif%}</a>
         </div>
     </article>
 {% endfor %}
@@ -38,7 +27,7 @@
     <div>
         <ul class="blog-recent">
         {% for post in recent_posts%}
-            <li><a class="muted" href="/{{year}}/{{post['url']}}">{{post['title']}}</a></li>
+            <li><a class="muted" href="/{{post['date'].strftime('%Y')}}/{{post['url']}}">{{post['title']}}</a></li>
         {% endfor %}
         </ul>
     </div>

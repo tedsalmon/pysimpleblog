@@ -1,20 +1,8 @@
 {% extends "base.tpl" %}
 {% block body %}
 <article class="blog-content">
-    <header>
-        <hgroup>
-            <h2 class="muted">{{post['title']}}</h2>
-            <h5>by {{post['author']}} on {{post['date'].strftime('%B %d, %Y %H:%M')}}</h5>
-            {% if user_login %}
-            <div class="blog-post-control">
-                <a title="Edit Post" class="icon-edit" href="/admin/post-editor/{{post['_id']}}"></a>
-                <a title="Delete Post" class=" delete-post icon-ban-circle" href="#" data-post-id="{{post['_id']}}"></a>
-            </div>
-            {% endif %}
-        </hgroup>
-    </header>
-    <div>{{post['body']}}</div>
-    <div class="blog-tags">Tagged {% for tag in post['tags'] %}{{'<a class="blog-tag muted" href="/tags/%s">%s</a> ' % (tag.strip(), tag)}}{% endfor %}</div>
+    {% include 'post_template.tpl' %}
+    <div class="blog-tags"><b class="icon-tags" title="Tags"></b> {% for tag in post['tags'] %}{{'<a class="blog-tag muted" href="/tags/%s">%s</a> ' % (tag.strip(), tag)}}{% endfor %}</div>
     <h3>Add Comment</h3>
     <form>
         <div class="control-group">
@@ -51,12 +39,14 @@
     {% if post['comments'] %}
         {% for comment in post['comments'] %}
         <div class="blog-comment">
-            <div>{{comment['name']|e}} wrote on {{comment['date'].strftime('%B %d, %Y %H:%M')}}:</div>
-            <div class="blog-comment-body">{{comment['comment']|e}}</div>
+            <div>{{comment['name']}} wrote on {{comment['date'].strftime('%B %d, %Y %H:%M')}}:</div>
+            <div class="blog-comment-body">{{comment['comment']}}</div>
         </div>
         {% endfor %}
     {% else %}
+    <div class="blog-comment">
         <h5>No comments yet</h5>
+    </div>
     {% endif %}
     </div>
 </article>
