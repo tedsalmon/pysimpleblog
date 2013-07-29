@@ -44,9 +44,11 @@
                             <ul class="nav">
                                 <li><a href="/">Home</a></li>
                                 <li><a href="/archive">Archives</a></li>
+                                {% if blog_links %}
                                 {%for link in blog_links %}
                                 <li><a href="{{link['url']}}">{{link['title']}}</a></li>
                                 {%endfor%}
+                                {% endif %}
                                 {%if user_login %}
                                 <li class="divider-vertical"></li>
                                 <li class="dropdown">

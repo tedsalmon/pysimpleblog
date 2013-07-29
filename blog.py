@@ -387,5 +387,5 @@ def sterilize(data, required_fields, ):
     for key in required_fields:
         if key not in data:
             return False
-        return_data[key] = str(utils.escape(data[key]))
+        return_data[key] = data[key]
     return return_data
