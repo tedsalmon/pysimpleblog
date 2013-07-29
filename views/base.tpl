@@ -60,8 +60,9 @@
                                 {% endif %}
                             </ul>
                             <div class="blog-nav-extras pull-right">
-                                <form class="navbar-search ">
-                                    <input type="text" class="search-query" placeholder="Search">
+                                <form class="navbar-search" action="http://google.com/search" method="GET">
+                                    <input type="hidden" name="q" value="site:{{site_url}}">
+                                    <input type="text" class="search-query" name="q" results="0" placeholder="Search">
                                 </form>
                             </div>
                         </nav>
