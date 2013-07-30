@@ -18,7 +18,7 @@
             </div>
             <div class="control-group">
                 <div class="controls">
-                    <textarea class="long-textarea" rows="5" id="comment_comment" placeholder="Comment"></textarea>
+                    <textarea class="long-textarea" rows="5" id="comment_body" placeholder="Comment"></textarea>
                 </div>
             </div>
             <div class="control-group">
@@ -40,7 +40,7 @@
         {% for comment in post['comments'] %}
         <div class="blog-comment">
             <div>{{comment['name']}} wrote on {{comment['date'].strftime('%B %d, %Y %H:%M')}}:</div>
-            <div class="blog-comment-body">{{comment['comment']}}</div>
+            <div class="blog-comment-body">{{comment['body']}}</div>
         </div>
         {% endfor %}
     {% else %}

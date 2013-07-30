@@ -124,7 +124,7 @@ def show_pending_comments(login_data=False, ):
 @blog_app.route('/admin/manage-links', apply=[auth_check(required=True)])
 def show_link_manager(login_data=False, ):
     page_variables = generate_pagevars(login_data, 'Manage Links')
-    return template('admin/link_management', generate_pagevars,
+    return template('admin/link_management', page_variables,
                     links=links.get_links(True))
 
 
@@ -252,17 +252,14 @@ def api_post_edit(post_id, login_data=False, ):
 @blog_app.route('/api/comment', method='POST')
 def api_comment_create():
     return_data = {'error': False}
-    req_data = request.json
-    post_data = entries.get_post(req_data['post_id'])
-    if not req_data['comment']:
-        return_data['error'] = 'No comment given'
-    for key in req_data:
-        req_data[key] = str(utils.escape(req_data[key]))
-    comment = {'name': req_data['name'],
-               'email': req_data['email'],
-               'comment': req_data['comment'],}
-    if not entries.create_comment(comment, req_data['post_id'], post_data):
-        return_data['error'] = 'Parent post not found'
+    req_data = sterilize(request.json,
+                         ['post_id', 'name', 'email', 'body'], escape=True)
+    if not req_data:
+        return_data['error'] = 'Missing Parameters'
+        return return_data
+    comment = dict((key, req_data[key]) for key in ['name', 'body', 'email'])
+    if not entries.create_comment(comment, req_data['post_id']):
+        return_data['error'] = 'Parent post not found.'
     else:
         return_data['msg'] = 'Comment submitted for approval.'
     return return_data
@@ -307,10 +304,15 @@ def api_link_delete(link_id, login_data=False, ):
                 apply=[auth_check(required=True, api=True)])
 def api_link_edit(link_id, login_data=False, ):
     return_data = {'error': False}
-    data = sterilize(request.json, ['url','title'])
-    if not data:
-        return_data['error'] = 'Missing Parameters'
-    links.edit_link(link_id, data)
+    data = sterilize(request.json, required_fields=False, escape=True)
+    link = links.get_link(link_id)
+    if not link:
+        return_data['error'] = 'Link does not exists!'
+        return return_data
+    for key, val in data.items():
+        if key in link:
+            link[key] = val
+    links.edit_link(link)
     return return_data
     
 
@@ -342,24 +344,24 @@ def static(file_type, file_name, ):
 @blog_app.error(500)
 def error_handler(error, ):
     err_msgs = {
-        '500 Internal Server Error': 'Error encountered while\
-                                      processing your request.',
-        '403 Forbidden': 'Please login to view this page.',
         '401 Unauthorized': 'You are not authorized to be here.',
+        '403 Forbidden': 'Please login to view this page.',
         '404 Not Found': 'The page you are looking cannot be found.',
         '405 Method Not Allowed': 'Method not allowed!',
+        '500 Internal Server Error': 'Error encountered while\
+                              processing your request.',
     }
     msg = 'Something really bad happened!'
     try:
         msg = err_msgs[response.status]
     except KeyError:
         pass
-    page_variables, stacktrace = False, False
+    p_vars, strace = False, False
     if settings['debug'] and error.traceback:
-        stacktrace = error.traceback
+        strace = error.traceback
     if '404' in response.status:
-        page_variables = generate_pagevars(verify_auth(), 'Error')
-    return template('error', page_variables, error=msg, stacktrace=stacktrace)
+        p_vars = generate_pagevars(verify_auth(), 'Error')
+    return template('error', page_variables=p_vars, error=msg, stacktrace=strace)
 
 # Helper methods
 def generate_pagevars(login_data=False, sub_title=False, ):
@@ -375,13 +377,20 @@ def generate_pagevars(login_data=False, sub_title=False, ):
 
 def sterilize(data, required_fields, escape=False, ):
     return_data = {}
-    for key in required_fields:
-        if key not in data:
-            return False
-        if not escape:
-            return_data[key] = data[key]
-        else:
-            return_data[key] = utils.escape(data[key])
+    if required_fields:
+        for key in required_fields:
+            if key not in data:
+                return False
+            if not escape:
+                return_data[key] = data[key]
+            else:
+                return_data[key] = utils.escape(data[key])
+    else:
+        for key in data:
+            if not escape:
+                return_data[key] = data[key]
+            else:
+                return_data[key] = utils.escape(data[key])
     return return_data
 
 

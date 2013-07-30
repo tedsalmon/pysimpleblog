@@ -57,7 +57,7 @@
     </div>
     <div class="control-group">
 	<div class="controls">
-	    <span id="post_output" class="alert hide in"></span>
+	    <span id="post_output" class="alert hide alert-danger"></span>
 	</div>
     </div>
 </form>

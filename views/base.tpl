@@ -6,6 +6,7 @@
         <title>{% if sub_title %}{{sub_title}} | {%endif%}{{site_title}}</title>
         <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.2/css/bootstrap.min.css" rel="stylesheet" />
         <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.2/css/bootstrap-responsive.min.css" rel="stylesheet" />
+        <link href="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.4.5/bootstrap-editable/css/bootstrap-editable.css" rel="stylesheet"/>
         <link href="/static/css/style.css" rel="stylesheet" />
         <link rel="icon" href="/static/favicon.ico" type="image/x-ico" />
     </head>
@@ -81,6 +82,7 @@
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                 <h3>Login</h3>
+                <h5 id="login_output" class="alert alert-danger text-center hide"></h5>
             </div>
             <div class="modal-body">
                 <form class="form text-center" action="#">
@@ -97,11 +99,6 @@
                     <div class="control-group">
                         <div class="controls">
                             <button id="login_btn" type="button" class="btn">Login</button>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <div class="controls">
-                            <span class="alert hide" id="login_output"></span>
                         </div>
                     </div>
                 </form>
@@ -128,6 +125,7 @@
         <script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js'></script>
         <script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.2/js/bootstrap.min.js'></script>
         <script type="text/javascript" src="/static/js/main.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.4.5/bootstrap-editable/js/bootstrap-editable.min.js"></script>
         {% if site_ga_key and site_url %}
         <script>
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){

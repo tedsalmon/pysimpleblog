@@ -36,15 +36,11 @@ class Blog(object):
         return res['n']
     
     
-    def create_comment(self, comment_data, post_id, post_data=None, ):
-        if not post_data:
-            post_data = self.get_post(post_id)
-            if not post_data:
-                return False
+    def create_comment(self, comment_data, post_id, ):
         comment_data['id'] = self._create_id()
         comment_data['date'] = UTCDate()
         comment_data['approval'] = 0
-        res = self.blog_db.update({"_id": post_data['_id']},
+        res = self.blog_db.update({"_id": post_id},
                             {"$push": {"comments": comment_data}})
         return res['n']
     
@@ -241,9 +237,13 @@ class Links(object):
 
     
     def edit_link(self, link_data, ):
-        res = self.links.update(link_data)
+        res = self.links.update({"_id":link_data['_id']}, link_data)
+        print res, link_data
         return res['n']
     
+    
+    def get_link(self, link_id, ):
+        return self.links.find_one({"_id": link_id})
     
     def get_links(self, cannonical_author=False, ):
         links = []

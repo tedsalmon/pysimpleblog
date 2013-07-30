@@ -13,18 +13,16 @@
             <th>Title</th>
             <th>URL</th>
             <th>Author</th>
-            <th>Edit</th>
             <th>Delete</th>
         </tr>
     </thead>
     <tbody>
 {% for link in links %}
-    <tr>
-        <td>{{link['title']}}</td>
-        <td>{{link['url']}}</td>
+    <tr data-link-id="{{link['_id']}}">
+        <td><h title="Click to edit" class="edit-link editable link-title" data-name="title" data-type="text">{{link['title']}}</h></td>
+        <td><h title="Click to edit" class="edit-link editable link-url" data-name="url" data-type="text">{{link['url']}}</h></td>
         <td>{{link['author']}}</td>
-        <td><a title="Edit Link" class="icon-edit"></a></td>
-        <td><a title="Delete Link" class="delete-link icon-ban-circle" href="#" data-post-id="{{link['_id']}}" data-no-refresh="true"></a></td>
+        <td><a title="Delete Link" class="delete-link icon-ban-circle" href="#"></a></td>
     </tr>
 {% endfor %}
     </tbody>

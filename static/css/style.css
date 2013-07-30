@@ -109,6 +109,9 @@ article + article{
 .inline{
     display: inherit;
 }
+.input-small-height{
+    height: 15px !important;
+}
 .left-space{
     padding-left: 10px;
 }
