@@ -11,8 +11,7 @@
     {% for comment in comments %}
     <div id="comment_{{comment['id']}}" class="comment">
 	<div>{{comment['name']}} wrote on {{comment['date'].strftime("%B %d, %Y %H:%M")}}:</div>
-	<div class="blog-comment-body">{{comment['comment']}}</div>
-	<form>
+	<div class="blog-comment-body">{{comment['body']}}</div>
         <div class="control-group">
             <div class="control-group">
                 <div class="controls">
@@ -21,6 +20,7 @@
                 </div>
             </div>
 	</div>
+    </div>
     {% endfor %}
 </div>
 {% else %}

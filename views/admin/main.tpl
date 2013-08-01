@@ -1,7 +1,7 @@
 {% extends "base.tpl" %}
 {% block body %}
-<div class="span2 text-center blog-page">
-    <ul class="blog-admin-nav left-indent nav nav-tabs nav-stacked">
+<div class="span2 blog-page blog-admin-nav-container">
+    <ul class="nav nav-list well blog-admin-nav">
         {% include 'admin/admin_links.tpl' %}
     </ul>
 </div>

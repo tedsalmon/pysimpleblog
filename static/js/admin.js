@@ -32,7 +32,7 @@ Blog.Admin = {
 	if (!$new_post)
 	    return false;
 	$.ajax({
-	    url: '/api/admin/post',
+	    url: '/api/v1/post',
 	    type: 'POST',
 	    contentType: 'application/json; charset=utf-8',
 	    data: JSON.stringify($new_post),
@@ -50,7 +50,7 @@ Blog.Admin = {
     },
     deletePost: function(){
 	$.ajax({
-	    url: '/api/post/'+ $('.deleteable-post').attr('data-post-id'),
+	    url: '/api/v1/post/'+ $('.deleteable-post').attr('data-post-id'),
 	    type: 'DELETE',
 	    contentType: 'application/json; charset=utf-8',
 	    error: Blog._error,
@@ -58,14 +58,10 @@ Blog.Admin = {
 		if($return_data.error){
 		    alert($return_data.error);
 		}else{
-		    if($('.deleteable').attr('data-no-refresh') == 'true'){
-			$tr = $('.deleteable').closest('tr');
-			$tr.fadeOut(400, function(){
-			    $tr.remove();
-			});
-		    }else{
-			window.location = '/';
-		    }
+		    $tr = $('.deleteable-post').closest('tr');
+		    $tr.fadeOut(400, function(){
+			$tr.remove();
+		    });
 		}
 	    }
 	});
@@ -82,7 +78,7 @@ Blog.Admin = {
 	if (!$edit_post)
 	    return false;
 	$.ajax({
-	    url: '/api/post/' + $('#entry_id').val(),
+	    url: '/api/v1/post/' + $('#entry_id').val(),
 	    type: 'PUT',
 	    contentType: 'application/json; charset=utf-8',
 	    data: JSON.stringify($edit_post),
@@ -102,7 +98,7 @@ Blog.Admin = {
 	$comment_div = $('#comment_' + $comment_id);
 	$comment_approval = this.getAttribute('data-approval');
 	$.ajax({
-	    url: '/api/comment/' + $comment_id,
+	    url: '/api/v1/comment/' + $comment_id,
 	    type: ($comment_approval == '1') ? 'PUT' : 'DELETE',
 	    contentType: 'application/json; charset=utf-8',
 	    error: Blog._error,
@@ -123,7 +119,7 @@ Blog.Admin = {
 	if (!$add_link)
 	    return false;
 	$.ajax({
-	    url: '/api/link',
+	    url: '/api/v1/link',
 	    type: 'POST',
 	    data: JSON.stringify($add_link),
 	    contentType: 'application/json; charset=utf-8',
@@ -140,7 +136,7 @@ Blog.Admin = {
 	$data_row = $($(this).closest('tr'));
 	$link_id = $data_row.attr('data-link-id');
 	$.ajax({
-	    url: '/api/link/' + $link_id,
+	    url: '/api/v1/link/' + $link_id,
 	    type: 'DELETE',
 	    contentType: 'application/json; charset=utf-8',
 	    success: function($return_data) {
@@ -171,7 +167,7 @@ Blog.Admin = {
 	$edit_link = {};
 	$edit_link[params.name] = params.value;
 	$.ajax({
-	    url: '/api/link/' + $link_id,
+	    url: '/api/v1/link/' + $link_id,
 	    type: 'PUT',
 	    data: JSON.stringify($edit_link),
 	    contentType: 'application/json; charset=utf-8',

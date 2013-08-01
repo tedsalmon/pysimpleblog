@@ -57,7 +57,10 @@ Blog = {
 	// Create Comment
 	$('#comment_submit').click(this.createComment);
 	// Login
-	$('#login_modal_btn').click(function(){$('#login_modal').modal()});
+	$('#login_modal_btn').click(function(){
+	    $('#login_modal').modal();
+	    setTimeout($('#login_username').focus, 500);
+	});
 	$('#login_btn').click(this.doLogin);
     },
     createComment: function(){
@@ -70,7 +73,7 @@ Blog = {
 	if(!$comment_data)
 	    return false;
 	$.ajax({
-	    url: '/api/comment',
+	    url: '/api/v1/comment',
 	    type: 'POST',
 	    contentType: 'application/json; charset=utf-8',
 	    data: JSON.stringify($comment_data),
@@ -96,7 +99,7 @@ Blog = {
 	if (!$login_data)
 	    return false;
 	$.ajax({
-	    url: '/api/login',
+	    url: '/api/v1/login',
 	    type: 'POST',
 	    contentType: 'application/json; charset=utf-8',
 	    data: JSON.stringify($login_data),

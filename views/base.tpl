@@ -104,7 +104,7 @@
                 </form>
             </div>
         </div>
-        {% if user_login %}
+        {% if user_id %}
         <div id="delete_modal" class="modal hide fade">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
@@ -124,8 +124,8 @@
         <!-- Scripts -->
         <script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js'></script>
         <script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.2/js/bootstrap.min.js'></script>
-        <script type="text/javascript" src="/static/js/main.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.4.5/bootstrap-editable/js/bootstrap-editable.min.js"></script>
+        <script type="text/javascript" src="/static/js/main.js"></script>
         {% if site_ga_key and site_url %}
         <script>
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -136,9 +136,7 @@
             ga('send', 'pageview');
         </script>
         {% endif %}
-        {% if user_id %}
-        <script type="text/javascript" src="/static/js/admin.js"></script>
-        {% endif %}
+        {% if user_id %}<script type="text/javascript" src="/static/js/admin.js"></script>{% endif %}
         <script>
             (function(){
                 Blog.init();

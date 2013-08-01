@@ -4,6 +4,7 @@ from creole import Parser
 from creole.html_emitter import HtmlEmitter
 from datetime import datetime
 from hashlib import sha256, sha512
+from jinja2 import utils
 from pymongo import MongoClient, errors as pymongoerrors
 from random import randint
 from pysimpleblog.core.functions import b36encode, Settings, UTCDate
@@ -12,68 +13,121 @@ _s = Settings()
 DB_SETTINGS = _s['database']
 DB_CONN = MongoClient(DB_SETTINGS['address'])
 
+
+def Validate(data, fields, require_all=True, ):
+    return_data = {}
+    if not data:
+        return False
+    for field, settings in fields.items():
+        if field in data:
+            val = data[field]
+            if settings['escape']:
+                val = str(utils.escape(val))
+            if 'type' in settings:
+                val = settings['type'](val)
+            return_data[field] = val
+        else:
+            if require_all and settings['required']:
+                return False
+    return return_data
+
+
 class Blog(object):
     
     POST_NS = 0
     PAGE_NS = 1
+    
+    COMMENT_FIELDS = {
+        'name': {'reqired': 1, 'escape': 1},
+        'email': {'reqired': 1, 'escape': 1},
+        'body': {'reqired': 1, 'escape': 1},
+    }
+    ENTRY_FIELDS = {
+        'title': {'reqired': 1, 'escape': 1},
+        'body': {'reqired': 1, 'escape': 0},
+        'tags': {'reqired': 0, 'escape': 1},
+        'status': {'reqired': 1, 'escape': 1, 'type': int},
+        'type': {'reqired': 1, 'escape': 1, 'type': int}
+    }
     
     def __init__(self, db_conn=False, ):
         self._client = db_conn if db_conn else DB_CONN
         self._db_handle = self._client[DB_SETTINGS['name']]
         self.blog_db = self._db_handle.entries
         self.users_db = self._db_handle.users
-    
+        self.error = False
     
     def _create_id(self, ):
         time = int(UTCDate().strftime("%s"))
         return b36encode(time+randint(0,9001)).lower()
     
     
+    def _create_urlslug(self, title, maxl=8, ):
+        title = title.strip().split(' ')
+        if len(title) > 1:
+            title = [s for s in title if s.isalpha() or s.isdigit()]
+        else:
+            temp = []
+            for char in title[0]:
+                if char.isalpha() or char.isdigit():
+                    temp.append(char)
+            title = [''.join(temp)]
+        return '-'.join(title[0:(maxl-1)]).lower()
+    
+
     def approve_comment(self, comment_id, ):
         res = self.blog_db.update({"comments":
                                    {"$elemMatch": {"id": comment_id}}},
                                    {"$set": {"comments.$.approval": 1}})
+        if not res['n']:
+            self.error = "Invalid comment ID"
         return res['n']
     
     
-    def create_comment(self, comment_data, post_id, ):
+    def create_comment(self, form_data, ):
+        comment_data = Validate(form_data, self.COMMENT_FIELDS)
+        if not comment_data:
+            self.error = "Parent post not found."
+            return False
         comment_data['id'] = self._create_id()
         comment_data['date'] = UTCDate()
         comment_data['approval'] = 0
-        res = self.blog_db.update({"_id": post_id},
+        res = self.blog_db.update({"_id": form_data['post_id']},
                             {"$push": {"comments": comment_data}})
+        if not res['n']:
+            self.error = "Error inserting comment"
         return res['n']
     
 
-    def create_post(self, data, author, data_ns, url_slug=None, ):
+    def create_post(self, data, author, url_slug=None, ):
+        entry_data = Validate(data, self.ENTRY_FIELDS)
+        if not entry_data:
+            self.error = "Missing/Invalid parameters"
+            return False
         if not url_slug:
-            s_title = data['title'].split(' ')
-            if len(s_title) > 1:
-                s_title = [s for s in s_title if s.isalpha() or s.isdigit()]
-            else:
-                s_title = [''.join([s for s in s_title[0] if s.isalpha()
-                                    or s.isdigit()])]
-            url_slug = '-'.join(s_title[0:7 if len(s_title) >= 8
-                                    else len(s_title)]).lower()
-        post_id = self._create_id()
-        now = UTCDate()
+            url_slug = self._create_urlslug(entry_data['title'])
+        now, post_id = UTCDate(), self._create_id()
         post_data = {
             "_id": post_id,
-            "title": data['title'],
+            "title": entry_data['title'],
             "author": author,
-            "body": data['body'],
+            "body": entry_data['body'],
             "url": url_slug,
             "date": now,
-            "type": data_ns,
-            "tags": data['tags'],
-            "status": int(data['status']),
+            "type": int(bool(entry_data['type'])),
+            "tags": [tag.strip() for tag in entry_data['tags'].split(',')],
+            "status": int(bool(entry_data['status'])),
             "comments": []}
-        self.blog_db.insert(post_data)
-        return '%s/%s' % (now.strftime('%Y'), url_slug)
+        if self.blog_db.insert(post_data):
+            return self.get_uri(post_id, post_data)
+        self.error = "Error creating post"
+        return False
     
     
     def delete_post(self, post_id, ):
         res = self.blog_db.remove({"_id": post_id})
+        if not res['n']:
+            self.error = "Invalid post ID"
         return res['n']
     
     
@@ -81,18 +135,28 @@ class Blog(object):
         res = self.blog_db.update({"comments":
                                    {"$elemMatch": {"id": comment_id}}},
                                    {"$set": {"comments.$.approval": -1}})
+        if not res['n']:
+            self.error = "Invalid comment ID"
         return res['n']
     
     def edit_post(self, post_id, data, ):
-        if type(data['tags']) != list:
-            data['tags'] = [tag.strip() for tag in data['tags'].split(',')]
-        if not self.blog_db.update({"_id": post_id}, data):
+        updates = {'$set': {}}
+        entry_data = Validate(data, self.ENTRY_FIELDS, require_all=False)
+        if not entry_data:
+            self.error = "Missing/invalid parameters"
             return False
-        if data['type'] == 0:
-            uri = '%s/%s' % (data['date'].strftime('%Y'), data['url'])
-        else:
-            uri = 'special/%s' % data['url']
-        return uri
+        if 'tags' in entry_data:
+            if type(entry_data['tags']) != list:
+                entry_data['tags'] = [tag.strip() for tag in
+                                      entry_data['tags'].split(',')]
+        for key, value in entry_data.items():
+            updates['$set'][key] = value
+        if 'title' in entry_data:
+            updates['$set']['url'] = self._create_urlslug(entry_data['title'])
+        res = self.blog_db.update({"_id": post_id}, updates)
+        if not res['n']:
+            self.error = "Error updating post"
+        return res['n']
     
     
     def get_archive(self, ):
@@ -121,10 +185,18 @@ class Blog(object):
             post['body'] = HtmlEmitter(Parser(post['body']).parse()).emit()
             post['comment_count'] = len(approved_comments)
             posts.append(post)
+        if not posts:
+            self.error = "Posts not found"
         return posts
+    
+    
+    def get_last_error(self, ):
+        error = self.error
+        self.error = False
+        return error
 
 
-    def get_post(self, url, year=None, ):
+    def get_post(self, url, year=None, auth=False, ):
         query = {}
         if year:
             query = {'url': url,
@@ -135,6 +207,8 @@ class Blog(object):
         else:
             query = {'$or': [{'_id': url}, {'url': url}],
                      'status': 1, 'type': self.POST_NS}
+        if auth:
+            del query['status']
         post = self.blog_db.find_one(query)
         if post:
             comments = []
@@ -145,6 +219,8 @@ class Blog(object):
             author = self.users_db.find_one({"_id": post['author']})
             post['author'] = author['display_name']
             post['body'] = HtmlEmitter(Parser(post['body']).parse()).emit()
+        else:
+            self.error = "Post not found"
         return post
     
     
@@ -166,6 +242,8 @@ class Blog(object):
             post['body'] = HtmlEmitter(Parser(post['body']).parse()).emit()
             post['comment_count'] = len(approved_comments)
             posts.append(post)
+        if not posts:
+            self.error = "Posts not found"
         return posts
     
     
@@ -174,9 +252,23 @@ class Blog(object):
         return post
     
     
-    def get_posts_all(self, page_num, ):
-        post = self.blog_db.find_one({'$or': [{'_id': url}, {'url': url}]})
+    def get_post_clean(self, url, year=None,):
+        post = self.get_post(url, year)
+        if post:
+            post['date'] = post['date'].strftime('%Y-%m-%d %H:%M:%S')
+            for comment in post['comments']:
+                comment = post['comments'][j]
+                comment['date'] = comment['date'].strftime('%Y-%m-%d %H:%M:%S')
         return post
+    
+    
+    def get_post_list(self, page_num, ):
+        posts = self.get_posts(page_num)
+        for post in posts:
+            post['date'] = post['date'].strftime('%Y-%m-%d %H:%M:%S')
+            del post['comments']
+            del post['body']
+        return posts
     
     
     def get_recent(self, ):
@@ -186,6 +278,8 @@ class Blog(object):
         recent_posts = []
         for post in q:
             recent_posts.append(post)
+        if not recent_posts:
+            self.error = "Posts not found"
         return recent_posts
 
     
@@ -194,6 +288,18 @@ class Blog(object):
         if post:
             post['body'] = HtmlEmitter(Parser(post['body']).parse()).emit()
         return post
+    
+    
+    def get_uri(self, post_id, post=None, ):
+        if not post:
+            post = self.blog_db.find_one({"_id": post_id})
+        if post:
+            if post['type'] == self.POST_NS:
+                return '%s/%s' % (post['date'].strftime('%Y'), post['url'])
+            else:
+                return 'special/%s' % post['url']
+        self.error = "Post not found"
+        return False
     
     
     def get_unapproved_comments(self, ):
@@ -210,11 +316,17 @@ class Blog(object):
 
 class Links(object):
     
+    LINK = {
+        'url': {'required': 1, 'escape': 1},
+        'title': {'required': 1, 'escape': 1},
+    }
+    
     def __init__(self, db_conn=False, ):
         self._client = db_conn if db_conn else DB_CONN
         self._db_handle = self._client[DB_SETTINGS['name']]
         self.users = self._db_handle.users
         self.links = self._db_handle.links
+        self.error = False
 
     
     def _create_id(self, ):
@@ -222,24 +334,44 @@ class Links(object):
         return b36encode(time+randint(0,9001)).lower()
 
     
-    def create_link(self, data, author, ):
+    def create_link(self, link_data, author, ):
         link_id = self._create_id()
+        link_data = Validate(link_data, self.LINK)
+        if not link_data:
+            self.error = "Missing/Invalid Parameters"
+            return False
         self.links.insert({'_id': link_id,
-                           'url': data['url'],
-                           'title': data['title'],
+                           'url': link_data['url'],
+                           'title': link_data['title'],
                            'author': author})
         return link_id
 
     
     def delete_link(self, link_id, ):
         res = self.links.remove({"_id": link_id})
+        if not res['n']:
+            self.error = "Link ID not found"
         return res['n']
 
     
-    def edit_link(self, link_data, ):
-        res = self.links.update({"_id":link_data['_id']}, link_data)
-        print res, link_data
+    def edit_link(self, link_id, link_data, ):
+        updates = {'$set': {}}
+        link_data = Validate(link_data, self.LINK, require_all=False)
+        if not link_data:
+            self.error = "Missing/Invalid Parameters"
+            return False
+        for key, value in link_data.items():
+            updates['$set'][key] = value
+        res = self.links.update({"_id": link_id}, updates)
+        if not res['n']:
+            self.error = "Link ID not found"
         return res['n']
+    
+    
+    def get_last_error(self, ):
+        error = self.error
+        self.error = False
+        return error
     
     
     def get_link(self, link_id, ):
@@ -293,7 +425,10 @@ class Sessions(object):
     
     
 class Users(object):
-    
+    USER = {
+        'username': {'reqired': 1, 'escape': 0},
+        'password': {'reqired': 1, 'escape': 0},
+    }
     def __init__(self, db_conn=False, ):
         self._client = db_conn if db_conn else DB_CONN
         self._db_handle = self._client[DB_SETTINGS['name']]
@@ -347,6 +482,12 @@ class Users(object):
         return self.db.update({"_id": username},
                         {"$set": {"password": new_hash},
                          "$set": {"salt": salt}})
+    
+    
+    def get_last_error(self, ):
+        error = self.error
+        self.error = False
+        return error
 
 
     def get_user(self, username, ):
@@ -360,13 +501,17 @@ class Users(object):
         return users
 
     
-    def verify_login(self, username, password, ):
-        user_data = self.db.find_one({"_id": username})
-        if not user_data:
-            self.error = "Invalid Login"
+    def verify_login(self, login_data, ):
+        login_data = Validate(login_data, self.USER)
+        if not login_data:
+            self.error = "Invalid login. Please try again."
             return False
-        given_pw_hash = self._make_hash(user_data['salt'], password)
+        user_data = self.db.find_one({"_id": login_data['username']})
+        if not user_data:
+            self.error = "Invalid login. Please try again."
+            return False
+        given_pw_hash = self._make_hash(user_data['salt'], login_data['password'])
         if given_pw_hash != user_data['password']:
-            self.error = "Invalid Username/Password"
+            self.error = "Invalid login. Please try again."
             return False
         return user_data

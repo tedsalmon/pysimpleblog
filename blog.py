@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 from bottle import abort, Bottle, redirect, response, request, static_file, jinja2_template as template
-from jinja2 import utils
 from pysimpleblog.core.functions import BASE, Settings
 from pysimpleblog.core.models import Blog, Links, Users, Sessions
 
@@ -27,8 +26,11 @@ def auth_check(required=False, api=False, ):
                     if not api:
                         abort(403, "Forbidden")
                     else:
+                        realm = 'Basic realm="API"'
+                        err_msg = "Please provide BASIC auth or a Session ID"
+                        response.headers['WWW-Authenticate'] = realm
                         response.status = 401
-                        return False
+                        return {"error": err_msg}
                 return fn(*args, **kwargs)
             return fn(*args, **kwargs)
         return wrapper
@@ -49,7 +51,7 @@ def show_listing(login_data=False, page_id=None,):
 @blog_app.route('/<url:re:[a-z0-9]{6}>', apply=[auth_check()])
 @blog_app.route('/<year:int>/<url>', apply=[auth_check()])
 def show_post(url, login_data=False, year=False,):
-    post_data = entries.get_post(url, year=year)
+    post_data = entries.get_post(url, year=year, auth=login_data)
     if not post_data:
         abort(404, "Not Found")
     page_variables = generate_pagevars(login_data, post_data['title'])
@@ -137,6 +139,7 @@ def show_profile(login_data=False, ):
     return template("admin/profile_editor", page_variables,
                     profile_data=profile_data)
 
+
 @blog_app.route('/logout', apply=[auth_check()])
 def do_logout(login_data=False, ):
     if login_data:
@@ -148,20 +151,15 @@ def do_logout(login_data=False, ):
 #
 # RESTful API Begins here
 # Read-only functions:
-# GET => /api/post, GET => /api/posts, POST => /api/comment
+# GET => /api/v1/post, GET => /api/v1/posts, POST => /api/v1/comment
 # All other functions require BASIC Auth or a Session ID Cookie
 #
-@blog_app.route('/api/login', method='POST')
+@blog_app.route('/api/v1/login', method='POST')
 def api_login():
     return_data = {'error': False}
-    fields = ['username', 'password']
-    req_data = sterilize(request.json, fields)
-    if not req_data:
-        return_data['error'] = 'Missing Parameters'
-        return return_data
-    user = users.verify_login(req_data['username'], req_data['password'])
+    user = users.verify_login(request.json)
     if not user:
-        return_data['error'] = users.error
+        return_data['error'] = users.get_last_error()
         return return_data
     # Start Session
     session = sessions.create_session(user['_id'])
@@ -170,165 +168,107 @@ def api_login():
     return return_data
     
 
-@blog_app.route('/api/admin/post', method='POST',
+@blog_app.route('/api/v1/post', method='POST',
                 apply=[auth_check(required=True, api=True)])
 def api_post_create(login_data=False, ):
-    return_data = {'error': False}
-    fields = ['title', 'body', 'tags', 'status', 'type']
-    post_data = sterilize(request.json, fields)
-    if not post_data:
-        return_data['error'] = 'Missing Parameters'
-        return return_data
-    post_data['tags'] = [tag.strip() for tag in post_data['tags'].split(',')]
-    NS = 0 if post_data['type'] == '0' else 1
-    new_post = entries.create_post(post_data, login_data, NS)
+    return_data = {'error': False}    
+    new_post = entries.create_post(request.json, login_data)
     if not new_post:
-        return_data['error'] = 'Failed to create post!'
+        return_data['error'] = entries.get_last_error()
         return return_data
     return_data['location'] = new_post
     return return_data
 
 
-@blog_app.route('/api/post', method='GET')
-@blog_app.route('/api/post/<page_num:int>', method='GET')
-def api_post_getmany(page_num=1, ):
-    return_data = {'posts': []}
-    return_data['posts'] = entries.get_posts(page_num)
-    for i in xrange(0, len(return_data['posts'])):
-        post = return_data['posts'][i]
-        post['date'] = str(post['date'])
-        del post['comments']
-        del post['body']
+@blog_app.route('/api/v1/post', method='GET')
+@blog_app.route('/api/v1/post/<page_num:int>', method='GET')
+def api_post_list(page_num=1, ):
+    return_data = {'posts': entries.get_post_list(page_num)}
     return return_data
 
 
-@blog_app.route('/api/post/<post_id>', method='GET')
+@blog_app.route('/api/v1/post/<post_id>', method='GET')
 def api_post_get(post_id, ):
-    post_data = {'post': {}}
-    post = entries.get_post(post_id)
-    if post:
-        post['date'] = str(post['date'])
-        for j in xrange(0, len(post['comments'])):
-            comment = post['comments'][j]
-            comment['date'] = str(comment['date'])
-        post_data['post'] = post
+    post_data = {'post': entries.get_post_clean(post_id)}
     return post_data
 
 
-@blog_app.route('/api/post/<post_id>', method='DELETE',
+@blog_app.route('/api/v1/post/<post_id>', method='DELETE',
                 apply=[auth_check(required=True, api=True)])
 def api_post_delete(post_id, login_data=False, ):
     return_data = {'error': False}
     if not entries.delete_post(post_id):
-        return_data['error'] = 'Invalid Post ID'
+        return_data['error'] = entries.get_last_error()
         return return_data
     return return_data
 
 
-@blog_app.route('/api/post/<post_id>', method='PUT',
+@blog_app.route('/api/v1/post/<post_id>', method='PUT',
                 apply=[auth_check(required=True, api=True)])
 def api_post_edit(post_id, login_data=False, ):
     return_data = {'error': False}
-    req_data = request.json
-    post = entries.get_post_internal(post_id)
-    if not post:
-        return_data['error'] = 'Invalid Post ID'
-        return return_data
-    post_data = dict((key, post[key]) for key in post)
-    special_types =  ['status', 'type'] 
-    for key in post_data:
-        if key in req_data:
-            if key in special_types:
-                post_data[key] = int(req_data[key])
-            else:
-                post_data[key] = req_data[key]
-    url = entries.edit_post(post_id, post_data)
-    if not url:
-        return_data['error'] = 'Error Updating post'
-    return_data['location'] = url
+    res = entries.edit_post(post_id, request.json)
+    if not res:
+        return_data['error'] = entries.get_last_error()
+        return False
+    return_data['location'] = entries.get_uri(post_id)
     return return_data
 
 
-@blog_app.route('/api/comment', method='POST')
+@blog_app.route('/api/v1/comment', method='POST')
 def api_comment_create():
     return_data = {'error': False}
-    req_data = sterilize(request.json,
-                         ['post_id', 'name', 'email', 'body'], escape=True)
-    if not req_data:
-        return_data['error'] = 'Missing Parameters'
-        return return_data
-    comment = dict((key, req_data[key]) for key in ['name', 'body', 'email'])
-    if not entries.create_comment(comment, req_data['post_id']):
-        return_data['error'] = 'Parent post not found.'
+    if not entries.create_comment(request.json):
+        return_data['error'] = entries.get_last_error()
     else:
         return_data['msg'] = 'Comment submitted for approval.'
     return return_data
 
 
-@blog_app.route('/api/comment/<comment_id>', method='PUT',
+@blog_app.route('/api/v1/comment/<comment_id>', method='PUT',
                 apply=[auth_check(required=True, api=True)])
 def api_comment_approve(comment_id, login_data=False, ):
-    entries.approve_comment(comment_id)
-    return True
+    return {"error": not bool(entries.approve_comment(comment_id))}
 
 
-@blog_app.route('/api/comment/<comment_id>', method='DELETE',
+@blog_app.route('/api/v1/comment/<comment_id>', method='DELETE',
                 apply=[auth_check(required=True, api=True)])
 def api_comment_deny(comment_id, login_data=False, ):
-    entries.deny_comment(comment_id)
-    return True
+    return {"error": not bool(entries.deny_comment(comment_id))}
 
 
-@blog_app.route('/api/link', method='POST',
+@blog_app.route('/api/v1/link', method='POST',
                 apply=[auth_check(required=True, api=True)])
 def api_link_create(login_data=False, ):
     return_data = {'error': False}
-    data = sterilize(request.json, ['url','title'])
-    if not data:
-        return_data['error'] = 'Missing Parameters'
-    else:
-        link_id = links.create_link(data, login_data)
+    if not links.create_link(request.json, login_data):
+        return_data['error'] = links.get_last_error()
     return return_data
 
 
-@blog_app.route('/api/link/<link_id>', method='DELETE',
+@blog_app.route('/api/v1/link/<link_id>', method='DELETE',
                 apply=[auth_check(required=True, api=True)])
 def api_link_delete(link_id, login_data=False, ):
     return_data = {'error': False}
     if not links.delete_link(link_id):
-        return_data['error'] = 'Invalid Link ID'
+        return_data['error'] = links.get_last_error()
     return return_data
 
 
-@blog_app.route('/api/link/<link_id>', method='PUT',
+@blog_app.route('/api/v1/link/<link_id>', method='PUT',
                 apply=[auth_check(required=True, api=True)])
 def api_link_edit(link_id, login_data=False, ):
     return_data = {'error': False}
-    data = sterilize(request.json, required_fields=False, escape=True)
-    link = links.get_link(link_id)
-    if not link:
-        return_data['error'] = 'Link does not exists!'
-        return return_data
-    for key, val in data.items():
-        if key in link:
-            link[key] = val
-    links.edit_link(link)
+    if not links.edit_link(link_id, request.json):
+        return_data['error'] = links.get_last_error()
     return return_data
     
 
-@blog_app.route('/api/changepassword/<username>', method='PUT',
+@blog_app.route('/api/v1/changepassword/<username>', method='PUT',
                 apply=[auth_check(required=True, api=True)])
 def api_password_edit(login_data=False, ):
     return_data = {'error': False}
-    req_data = request.json
-    fields = ['new', 'confirm', 'old']
-    pw_data = {}
-    for field in fields:
-        if field not in req_data:
-            return_data['error'] = 'No %s password provided' % field
-            return return_data
-        pw_data['%s'] = req_data['field']
-    return_data['output'] = users.edit_password(pw_data)
+    #@TODO Implement
     return return_data
 
 # Static handler when run in debug mode
@@ -356,12 +296,13 @@ def error_handler(error, ):
         msg = err_msgs[response.status]
     except KeyError:
         pass
-    p_vars, strace = False, False
+    page_variables, strace = {}, False
     if settings['debug'] and error.traceback:
         strace = error.traceback
     if '404' in response.status:
-        p_vars = generate_pagevars(verify_auth(), 'Error')
-    return template('error', page_variables=p_vars, error=msg, stacktrace=strace)
+        page_variables = generate_pagevars(verify_auth(), 'Error')
+    return template('error', page_variables, error=msg,
+                    stacktrace=strace)
 
 # Helper methods
 def generate_pagevars(login_data=False, sub_title=False, ):
@@ -372,25 +313,6 @@ def generate_pagevars(login_data=False, sub_title=False, ):
     for key, val in settings.items():
         if 'site_' in key:
             return_data[key] = val
-    return return_data
-
-
-def sterilize(data, required_fields, escape=False, ):
-    return_data = {}
-    if required_fields:
-        for key in required_fields:
-            if key not in data:
-                return False
-            if not escape:
-                return_data[key] = data[key]
-            else:
-                return_data[key] = utils.escape(data[key])
-    else:
-        for key in data:
-            if not escape:
-                return_data[key] = data[key]
-            else:
-                return_data[key] = utils.escape(data[key])
     return return_data
 
 
