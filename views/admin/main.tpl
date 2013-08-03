@@ -7,7 +7,6 @@
 </div>
 <div class="blog-content span10">
     {% block admin %}
-    Stuff
     {% endblock %}
 </div>
 {% endblock %}

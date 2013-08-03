@@ -14,6 +14,9 @@ Blog.Admin = {
 	$('#delete_confirm').click(this.deletePost);
 	$('#update_post_btn').click(this.editPost);
 	$('.comment-btn').click(this.editComment);
+	$('#link_add_trigger').click(function(){
+	   $('#link_add_modal').modal(); 
+	});
 	$('#link_add').click(this.createLink);
 	$('.delete-link').click(this.deleteLink);
 	$('.edit-link').editable({'mode': 'inline',
@@ -103,10 +106,13 @@ Blog.Admin = {
 	    contentType: 'application/json; charset=utf-8',
 	    error: Blog._error,
 	    success: function($return_data) {
-		if($return_data.error)
+		if($return_data.error){
 		    alert($return_data.error);
-		else
-		    $comment_div.remove();
+		}else{
+		    $comment_div.fadeOut(400, function(){
+			$comment_div.remove();
+		    });
+		}
 	    }
 	});
     },
@@ -125,12 +131,16 @@ Blog.Admin = {
 	    contentType: 'application/json; charset=utf-8',
 	    error: Blog._error,
 	    success: function($return_data) {
-		if($return_data.error)
+		console.log($return_data);
+		if($return_data.error){
 		    alert($return_data.error);
-		else // @todo: Don't reload
+		}else{
+		    //@todo: Don't reload
 		    location.reload();
+		}
 	    }
 	});
+	return false;
     },
     deleteLink: function(){
 	$data_row = $($(this).closest('tr'));

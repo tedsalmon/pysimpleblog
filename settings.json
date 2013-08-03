@@ -3,6 +3,8 @@
     "site_header": "This is a Blog!",
     "site_subheader": "I like cats",
     "site_footer": "Default Footer",
+    "site_description": "This describes your non-post pages",
+    "site_keywords": "site, keywords, go, here",
     "site_url": "",
     "site_ga_key": "",
     "database":{

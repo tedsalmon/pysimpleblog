@@ -45,7 +45,7 @@ def show_listing(login_data=False, page_id=None,):
         abort(404, 'Not Found')
     page_variables = generate_pagevars(login_data)
     return template('main', page_variables, page_id=page_id,
-                    posts=posts, recent_posts=entries.get_recent())
+                    posts=posts, recent_posts=entries.get_recent()) 
 
 
 @blog_app.route('/<url:re:[a-z0-9]{6}>', apply=[auth_check()])
@@ -54,13 +54,14 @@ def show_post(url, login_data=False, year=False,):
     post_data = entries.get_post(url, year=year, auth=login_data)
     if not post_data:
         abort(404, "Not Found")
-    page_variables = generate_pagevars(login_data, post_data['title'])
+    page_variables = generate_pagevars(login_data, post_data['title'],
+                                       ', '.join(post_data['tags']))
     return template('post', page_variables, post=post_data)
 
 
 @blog_app.route('/archive', apply=[auth_check()])
 def show_archives(login_data=False,):
-    page_variables = generate_pagevars(login_data, 'Archives')
+    page_variables = generate_pagevars(login_data, 'Archives', 'blog, archive')
     return template('archive', page_variables, posts=entries.get_archive())
 
 
@@ -69,7 +70,8 @@ def show_special_page(page_name, login_data=False, ):
     page = entries.get_page(page_name)
     if not page:
         abort(404, "Not Found")
-    page_variables = generate_pagevars(login_data, page['title'])
+    page_variables = generate_pagevars(login_data, page['title'],
+                                       page['title'].replace(' ', ', '))
     return template('special', page_variables, page=page)
 
 
@@ -78,7 +80,8 @@ def show_tags(tag_name, login_data=False, ):
     tag_name = tag_name.replace('-',' ')
     post_by_tags = entries.get_by_tags([tag_name.lower()])
     page_variables = generate_pagevars(login_data,
-                                       'Posts Tagged %s' % tag_name)
+                                       'Posts Tagged %s' % tag_name,
+                                       'tags, %s' % tag_name)
     return template('tags', page_variables, tag=tag_name, posts=post_by_tags)
 
 
@@ -86,7 +89,7 @@ def show_tags(tag_name, login_data=False, ):
 @blog_app.route('/admin', apply=[auth_check(required=True)])
 def show_admin(login_data=False, ):
     page_variables = generate_pagevars(login_data, 'Admin')
-    return template('admin/main', page_variables, settings=settings)
+    return template('admin/settings', page_variables, settings=settings)
 
 
 @blog_app.route('/admin/new-post', apply=[auth_check(required=True)])
@@ -128,6 +131,13 @@ def show_link_manager(login_data=False, ):
     page_variables = generate_pagevars(login_data, 'Manage Links')
     return template('admin/link_management', page_variables,
                     links=links.get_links(True))
+
+
+@blog_app.route('/admin/manage-users', apply=[auth_check(required=True)])
+def show_link_manager(login_data=False, ):
+    page_variables = generate_pagevars(login_data, 'Manage Users')
+    return template('admin/user_management', page_variables,
+                    users=users.get_users())
 
 
 @blog_app.route('/admin/view-profile', apply=[auth_check(required=True)])
@@ -262,7 +272,16 @@ def api_link_edit(link_id, login_data=False, ):
     if not links.edit_link(link_id, request.json):
         return_data['error'] = links.get_last_error()
     return return_data
-    
+
+
+@blog_app.route('/api/v1/user', method='POST',
+                apply=[auth_check(required=True, api=True)])
+def api_create_user(login_data=False, ):
+    return_data = {'error': False}
+    if not users.create_user(request.json):
+        return_data['error'] = users.get_last_error()
+    return return_data
+
 
 @blog_app.route('/api/v1/changepassword/<username>', method='PUT',
                 apply=[auth_check(required=True, api=True)])
@@ -305,7 +324,7 @@ def error_handler(error, ):
                     stacktrace=strace)
 
 # Helper methods
-def generate_pagevars(login_data=False, sub_title=False, ):
+def generate_pagevars(login_data=False, sub_title=False, keywords=False, ):
     nav_links = links.get_links()
     return_data = {
         'user_id': login_data, 'nav_links': nav_links, 'sub_title': sub_title
@@ -313,6 +332,8 @@ def generate_pagevars(login_data=False, sub_title=False, ):
     for key, val in settings.items():
         if 'site_' in key:
             return_data[key] = val
+    if sub_title:
+        return_data['site_description'] = sub_title
     return return_data
 
 

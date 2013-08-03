@@ -84,7 +84,9 @@ Blog = {
 		    $('#comment_output').addClass('alert-danger');
 		}else{
 		    $('#comment_output').addClass('alert-success');
-		    $('#comment_output').html($return_data.msg);
+		    $('#comment_output').fadeIn(400, function(){
+			$('#comment_output').html($return_data.msg);
+		    });
 		}
 		$('#comment_output').removeClass('hide');
 	    }

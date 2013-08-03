@@ -425,10 +425,19 @@ class Sessions(object):
     
     
 class Users(object):
-    USER = {
+    
+    LOGIN = {
         'username': {'reqired': 1, 'escape': 0},
         'password': {'reqired': 1, 'escape': 0},
     }
+    
+    USER = {
+        'username': {'reqired': 1, 'escape': 1},
+        'password': {'reqired': 1, 'escape': 0},
+        'display_name': {'reqired': 1, 'escape': 1},
+        'email_address': {'reqired': 1, 'escape': 1}
+    }
+    
     def __init__(self, db_conn=False, ):
         self._client = db_conn if db_conn else DB_CONN
         self._db_handle = self._client[DB_SETTINGS['name']]
@@ -448,14 +457,20 @@ class Users(object):
         return salt
     
     
-    def create_user(self, username, password, display_name=None):
-        if not display_name:
-            display_name = username
+    def create_user(self, user_data, ):
+        user_data = Validate(user_data, self.USER)
+        if not user_data:
+            self.error = "Missing/Invalid Paramters"
+            return False
         salt = self._make_salt()
-        pw_hash = self._make_hash(salt, password)
-        new_user = {"_id": username, "password": pw_hash,
-                    "salt": salt, "create_date": UTCDate(),
-                    "display_name": display_name}
+        new_user = {
+            "_id": user_data['username'],
+            "password": self._make_hash(salt, user_data['password']),
+            "salt": salt,
+            "create_date": UTCDate(),
+            "email_address": user_data['email_address'],
+            "display_name": user_data['display_name']
+        }
         try:
             self.db.insert(new_user)
         except pymongoerrors.DuplicateKeyError:
@@ -465,23 +480,38 @@ class Users(object):
     
     
     def delete_user(self, username, ):
-        return self.db.remove({"_id": username})
+        res = self.db.remove({"_id": username})
+        if not res['n']:
+            self.error = 'User not found'
+        return res['n']
     
     
     def edit_user(self, username, user_data, ):
-        user_data['_id'] = username
-        return self.db.update(user_data)
+        updates = {'$set': {}}
+        user_data = Validate(user_data, self.USER, require_all=False)
+        if not user_data:
+            self.error = 'Missing/Invalid Parameters'
+            return False
+        for key, value in user_data.items():
+            updates['$set'][key] = value
+        res = self.db.update({"_id": username}, updates)
+        if not res['n']:
+            self.error = 'User not found'
+        return res['n']
     
     
-    def edit_password(self, username, password, new_password, ):
-        if not self.verify_login(username, password):
-            self.error = "Invalid Password"
+    def edit_password(self, username, password_data, ):
+        if not self.verify_login(username, password_data['password']):
+            self.error = 'Invalid Password'
             return False
         salt = self._make_salt()
-        new_hash = self._make_hash(salt, new_password)
-        return self.db.update({"_id": username},
-                        {"$set": {"password": new_hash},
-                         "$set": {"salt": salt}})
+        new_hash = self._make_hash(salt, password_data['new_password'])
+        res = self.db.update({"_id": username},
+                             {"$set": {"password": new_hash},
+                              "$set": {"salt": salt}})
+        if not res['n']:
+            self.error = 'User not found'
+        return res['n']
     
     
     def get_last_error(self, ):
@@ -496,13 +526,14 @@ class Users(object):
     
     def get_users(self, ):
         users = []
-        for user in self.db.find(fields=['username', 'display_name']):
+        fields = ['username', 'display_name', 'email_address']
+        for user in self.db.find(fields=fields):
             users.append(user)
         return users
 
     
     def verify_login(self, login_data, ):
-        login_data = Validate(login_data, self.USER)
+        login_data = Validate(login_data, self.LOGIN)
         if not login_data:
             self.error = "Invalid login. Please try again."
             return False

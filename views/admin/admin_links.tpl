@@ -9,4 +9,4 @@
 <li><a href='/admin/manage-links'>Link Manager</a></li>
 <li class="nav-header">Users</li>
 <li><a href="/admin/view-profile">My Profile</a></li>
-<li><a>User Manager</a></li>
+<li><a href="/admin/manage-users">User Manager</a></li>
