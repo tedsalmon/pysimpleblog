@@ -190,9 +190,8 @@ def api_post_create(login_data=False, ):
     return return_data
 
 
-@blog_app.route('/api/v1/post', method='GET')
 @blog_app.route('/api/v1/post/<page_num:int>', method='GET')
-def api_post_list(page_num=1, ):
+def api_post_list(page_num, ):
     return_data = {'posts': entries.get_post_list(page_num)}
     return return_data
 
@@ -334,6 +333,8 @@ def generate_pagevars(login_data=False, sub_title=False, keywords=False, ):
             return_data[key] = val
     if sub_title:
         return_data['site_description'] = sub_title
+    if keywords:
+        return_data['site_keywords'] = keywords
     return return_data
 
 
