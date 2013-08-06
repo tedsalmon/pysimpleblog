@@ -1,6 +1,6 @@
 {% extends "base.tpl" %}
 {% block body %}
-<div class="blog-content divider-right span9">
+<div class="blog-content blog-main-bottom-margin divider-right span9">
 {% for post in posts %}
     {% set year = post['date'].strftime('%Y') %}
     <article>
@@ -13,12 +13,14 @@
         </div>
     </article>
 {% endfor %}
-{% if posts|length == 10 %}
+{% if posts|length == 10 or page_id > 1 %}
     <div class="blog-pagination" class="span11">
+    {% if posts|length == 10 %}
         <a class="muted" href='/page/{{page_id+1}}'>{{'\u2190'}} Older</a>
-        {% if page_id > 1 %}
-        <a class="muted" href='/page/{{page_id-1}}'>{{'\u2192'}} Newer</a>
-        {% endif %}
+    {% endif %}
+    {% if page_id > 1 %}
+        <a class="muted pull-right" href='/page/{{page_id-1}}'>Newer {{'\u2192'}}</a>
+    {% endif %}
     </div>
 {% endif %}
 </div>

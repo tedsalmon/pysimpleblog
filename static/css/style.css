@@ -51,12 +51,11 @@ article + article{
 .blog-container{
     background-color: #fff;
     margin-top: -20px;
-    padding: 1em 0em 0em 0em;
+    padding: 1em 0em 1em 0em;
 }
 .blog-content{
     padding-left: 20px !important;
     padding-right: 20px !important;
-    margin-bottom: 1em;
 }
 .blog-footer{
     padding: 10px 0px 10px 20px;
@@ -81,7 +80,7 @@ article + article{
     padding-bottom: 1.25em;
 }
 .blog-pagination{
-    padding: 10px 10px 0px 0px;
+    margin-top: -.5em;
 }
 .blog-post-control{
     padding-bottom: 1em;
@@ -98,10 +97,12 @@ article + article{
 .blog-recent{
     margin: 0px;
 }
+.blog-main-bottom-margin{
+    margin-bottom: 1em;
+}
 .blog-tags{
     margin: 1em 0em 1em 0em;
 }
-
 /* Helpers */
 .divider-right{
     border-right: 1px solid #ddd;
