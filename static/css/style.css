@@ -94,6 +94,10 @@ article + article{
     overflow-y: auto;
      resize: none;
 }
+.blog-login-remember{
+    display: inline;
+    padding-left: 5px;
+}
 .blog-recent{
     margin: 0px;
 }
@@ -124,6 +128,9 @@ article + article{
 }
 .long-textarea{
     width: 35%;
+}
+.no-margin{
+    margin: 0 0 0 0 !important;
 }
 .muted-border{
     border-top: 4px solid #999;

@@ -88,7 +88,7 @@
                 <h5 id="login_output" class="alert alert-danger text-center hide"></h5>
             </div>
             <div class="modal-body">
-                <form class="form text-center" action="#">
+                <form class="form-horizontal">
                     <div class="control-group">
                         <div class="controls">
                             <input type="text" id="login_username" placeholder="Username" />
@@ -97,6 +97,12 @@
                     <div class="control-group">
                         <div class="controls">
                             <input type="password" id="login_password" placeholder="Password" />
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <div class="controls">
+                            <input class="no-margin" type="checkbox" id="login_remember" />
+                            <label class="blog-login-remember" for="login_remember">Remember Me</label>
                         </div>
                     </div>
                     <div class="control-group">

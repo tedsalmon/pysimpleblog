@@ -22,6 +22,12 @@ Blog.Admin = {
 	$('.edit-link').editable({'mode': 'inline',
 				'url': this.editLink,
 				'tpl': '<input type="text" class="input-medium input-small-height"/>'});
+	$('.edit-settings').editable({'mode': 'inline',
+				'url': this.editSettings,
+				'tpl': '<input type="text" class="input-medium input-small-height"/>'});
+	$('.edit-user').editable({'mode': 'inline',
+				'url': this.editUser,
+				'tpl': '<input type="text" class="input-medium input-small-height"/>'});
     },
     createPost: function(){
 	$elements = {
@@ -97,11 +103,12 @@ Blog.Admin = {
 	});
     },
     editComment: function(){
-	$comment_id = this.getAttribute('data-comment-id');
-	$comment_div = $('#comment_' + $comment_id);
+	$comment_el = $($(this).closest('.comment'));
+	$comment_id = $comment_el.attr('data-comment-id');
+	$post_id = $comment_el.attr('data-post-id');
 	$comment_approval = this.getAttribute('data-approval');
 	$.ajax({
-	    url: '/api/v1/comment/' + $comment_id,
+	    url: '/api/v1/post/' + $post_id + '/comment/' + $comment_id,
 	    type: ($comment_approval == '1') ? 'PUT' : 'DELETE',
 	    contentType: 'application/json; charset=utf-8',
 	    error: Blog._error,
@@ -109,9 +116,19 @@ Blog.Admin = {
 		if($return_data.error){
 		    alert($return_data.error);
 		}else{
-		    $comment_div.fadeOut(400, function(){
-			$comment_div.remove();
+		    $comment_el.fadeOut(400, function(){
+			$comment_el.remove();
 		    });
+		    setTimeout(function(){
+			if(!$('.comment').length){
+			    $blog_comments = $('.blog-comments');
+			    $blog_comments.hide();
+			    $msg = $('<h4>');
+			    $msg.html('No comments pending approval');
+			    $blog_comments.html($msg);
+			    $blog_comments.fadeIn();
+			}
+		    }, 500);
 		}
 	    }
 	});
@@ -199,5 +216,11 @@ Blog.Admin = {
 	    }
 	});
 	return false;
+    },
+    editSettings: function(params){
+	console.log(params);
+    },
+    editUser: function(params){
+	console.log(params);
     }
-};
+}

@@ -124,7 +124,7 @@ def show_post_manager(page_num=1, login_data=False, ):
 def show_pending_comments(login_data=False, ):
     comments = entries.get_unapproved_comments()
     page_variables = generate_pagevars(login_data, 'Manage Comments')
-    return template('admin/comments', page_variables, comments=comments)
+    return template('admin/comment_management', page_variables, comments=comments)
 
 @blog_app.route('/admin/manage-links', apply=[auth_check(required=True)])
 def show_link_manager(login_data=False, ):
@@ -172,11 +172,21 @@ def api_login():
         return_data['error'] = users.get_last_error()
         return return_data
     # Start Session
-    session = sessions.create_session(user['_id'])
+    s_timeout = None
+    if 'remember' in request.json:
+        if request.json['remember'] == 1:
+            s_timeout = -86400 * 90
+    session = sessions.create_session(user['_id'], session_lifespan=s_timeout)
     response.set_cookie('session_id', session['session_id'],
                         expires=session['expiry'], path='/', )
     return return_data
-    
+
+
+@blog_app.route('/api/v1/posts/<page_num:int>', method='GET')
+def api_post_list(page_num, ):
+    return_data = {'posts': entries.get_post_list(page_num)}
+    return return_data
+
 
 @blog_app.route('/api/v1/post', method='POST',
                 apply=[auth_check(required=True, api=True)])
@@ -187,12 +197,6 @@ def api_post_create(login_data=False, ):
         return_data['error'] = entries.get_last_error()
         return return_data
     return_data['location'] = new_post
-    return return_data
-
-
-@blog_app.route('/api/v1/post/<page_num:int>', method='GET')
-def api_post_list(page_num, ):
-    return_data = {'posts': entries.get_post_list(page_num)}
     return return_data
 
 
@@ -224,26 +228,26 @@ def api_post_edit(post_id, login_data=False, ):
     return return_data
 
 
-@blog_app.route('/api/v1/comment', method='POST')
-def api_comment_create():
+@blog_app.route('/api/v1/post/<post_id>/comment', method='POST')
+def api_comment_create(post_id, ):
     return_data = {'error': False}
-    if not entries.create_comment(request.json):
+    if not entries.create_comment(post_id, request.json):
         return_data['error'] = entries.get_last_error()
     else:
         return_data['msg'] = 'Comment submitted for approval.'
     return return_data
 
 
-@blog_app.route('/api/v1/comment/<comment_id>', method='PUT',
+@blog_app.route('/api/v1/post/<post_id>/comment/<comment_id>', method='PUT',
                 apply=[auth_check(required=True, api=True)])
-def api_comment_approve(comment_id, login_data=False, ):
-    return {"error": not bool(entries.approve_comment(comment_id))}
+def api_comment_approve(comment_id, post_id, login_data=False, ):
+    return {"error": not bool(entries.approve_comment(post_id, comment_id))}
 
 
-@blog_app.route('/api/v1/comment/<comment_id>', method='DELETE',
+@blog_app.route('/api/v1/post/<post_id>/comment/<comment_id>', method='DELETE',
                 apply=[auth_check(required=True, api=True)])
-def api_comment_deny(comment_id, login_data=False, ):
-    return {"error": not bool(entries.deny_comment(comment_id))}
+def api_comment_deny(comment_id, post_id, login_data=False, ):
+    return {"error": not bool(entries.deny_comment(post_id, comment_id))}
 
 
 @blog_app.route('/api/v1/link', method='POST',

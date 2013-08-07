@@ -67,13 +67,13 @@ Blog = {
 	$elements = {'comment_name': {'required': 1, 'err_msg': 'your name.', 'clear_value': 1},
 		     'comment_email': {'required': 1, 'err_msg': 'your email.', 'clear_value': 1},
 		     'comment_body': {'required': 1, 'err_msg': 'a comment.', 'clear_value': 1},
-		     'comment_post_id': {'required': 1, 'err_msg': 'a Post ID.', 'clear_value': 0},
 	};
+	$post_id = $('#comment_post_id').val();
 	$comment_data = Blog._parseElements($elements, 'comment_output');
 	if(!$comment_data)
 	    return false;
 	$.ajax({
-	    url: '/api/v1/comment',
+	    url: '/api/v1/post/' + $post_id + '/comment',
 	    type: 'POST',
 	    contentType: 'application/json; charset=utf-8',
 	    data: JSON.stringify($comment_data),
@@ -93,9 +93,10 @@ Blog = {
     },
     doLogin: function(){
 	$elements = {'login_username': {'required': 1, 'err_msg': 'a Username.', 'clear_value': 0},
-		     'login_password': {'required': 1, 'err_msg': 'a Password.', 'clear_value': 0}
+		     'login_password': {'required': 1, 'err_msg': 'a Password.', 'clear_value': 0},
 	};
 	$login_data = Blog._parseElements($elements, 'login_output');
+	$login_data.remember = $('#login_remember:checked').length;
 	if (!$login_data)
 	    return false;
 	$.ajax({
@@ -111,7 +112,8 @@ Blog = {
 		    $login_err.fadeIn();
 		    $('#login_password').select();
 		}else{
-		    location.reload();
+		    //location.reload();
+		    return false;
 		}
 	    }
 	});

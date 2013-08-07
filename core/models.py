@@ -58,7 +58,7 @@ class Blog(object):
         self.error = False
     
     def _create_id(self, ):
-        time = int(UTCDate().strftime("%s"))
+        time = int(UTCDate().strftime('%s'))
         return b36encode(time+randint(0,9001)).lower()
     
     
@@ -75,75 +75,75 @@ class Blog(object):
         return '-'.join(title[0:(maxl-1)]).lower()
     
 
-    def approve_comment(self, comment_id, ):
-        res = self.blog_db.update({"comments":
-                                   {"$elemMatch": {"id": comment_id}}},
-                                   {"$set": {"comments.$.approval": 1}})
+    def approve_comment(self, post_id, comment_id, ):
+        res = self.blog_db.update({'_id': post_id, 'comments':
+                                   {'$elemMatch': {'id': comment_id}}},
+                                   {'$set': {'comments.$.approval': 1}})
         if not res['n']:
-            self.error = "Invalid comment ID"
+            self.error = 'Invalid comment ID'
         return res['n']
     
     
-    def create_comment(self, form_data, ):
+    def create_comment(self, post_id, form_data, ):
         comment_data = Validate(form_data, self.COMMENT_FIELDS)
         if not comment_data:
-            self.error = "Parent post not found."
+            self.error = 'Parent post not found.'
             return False
         comment_data['id'] = self._create_id()
         comment_data['date'] = UTCDate()
         comment_data['approval'] = 0
-        res = self.blog_db.update({"_id": form_data['post_id']},
-                            {"$push": {"comments": comment_data}})
+        res = self.blog_db.update({'_id': post_id},
+                            {'$push': {'comments': comment_data}})
         if not res['n']:
-            self.error = "Error inserting comment"
+            self.error = 'Error inserting comment'
         return res['n']
     
 
     def create_post(self, data, author, url_slug=None, ):
         entry_data = Validate(data, self.ENTRY_FIELDS)
         if not entry_data:
-            self.error = "Missing/Invalid parameters"
+            self.error = 'Missing/Invalid parameters'
             return False
         if not url_slug:
             url_slug = self._create_urlslug(entry_data['title'])
         now, post_id = UTCDate(), self._create_id()
         post_data = {
-            "_id": post_id,
-            "title": entry_data['title'],
-            "author": author,
-            "body": entry_data['body'],
-            "url": url_slug,
-            "date": now,
-            "type": int(bool(entry_data['type'])),
-            "tags": [tag.strip() for tag in entry_data['tags'].split(',')],
-            "status": int(bool(entry_data['status'])),
-            "comments": []}
+            '_id': post_id,
+            'title': entry_data['title'],
+            'author': author,
+            'body': entry_data['body'],
+            'url': url_slug,
+            'date': now,
+            'type': int(bool(entry_data['type'])),
+            'tags': [tag.strip() for tag in entry_data['tags'].split(',')],
+            'status': int(bool(entry_data['status'])),
+            'comments': []}
         if self.blog_db.insert(post_data):
             return self.get_uri(post_id, post_data)
-        self.error = "Error creating post"
+        self.error = 'Error creating post'
         return False
     
     
     def delete_post(self, post_id, ):
-        res = self.blog_db.remove({"_id": post_id})
+        res = self.blog_db.remove({'_id': post_id})
         if not res['n']:
-            self.error = "Invalid post ID"
+            self.error = 'Invalid post ID'
         return res['n']
     
     
-    def deny_comment(self, comment_id, ):
-        res = self.blog_db.update({"comments":
-                                   {"$elemMatch": {"id": comment_id}}},
-                                   {"$set": {"comments.$.approval": -1}})
+    def deny_comment(self, post_id, comment_id, ):
+        res = self.blog_db.update({'_id': post_id, 'comments':
+                                   {'$elemMatch': {'id': comment_id}}},
+                                   {'$set': {'comments.$.approval': -1}})
         if not res['n']:
-            self.error = "Invalid comment ID"
+            self.error = 'Invalid comment ID'
         return res['n']
     
     def edit_post(self, post_id, data, ):
         updates = {'$set': {}}
         entry_data = Validate(data, self.ENTRY_FIELDS, require_all=False)
         if not entry_data:
-            self.error = "Missing/invalid parameters"
+            self.error = 'Missing/invalid parameters'
             return False
         if 'tags' in entry_data:
             if type(entry_data['tags']) != list:
@@ -153,9 +153,9 @@ class Blog(object):
             updates['$set'][key] = value
         if 'title' in entry_data:
             updates['$set']['url'] = self._create_urlslug(entry_data['title'])
-        res = self.blog_db.update({"_id": post_id}, updates)
+        res = self.blog_db.update({'_id': post_id}, updates)
         if not res['n']:
-            self.error = "Error updating post"
+            self.error = 'Error updating post'
         return res['n']
     
     
@@ -174,7 +174,7 @@ class Blog(object):
     def get_by_tags(self, tags, ):
         posts = []
         tags_q = {'tags': {'$in': tags}, 'type': self.POST_NS, 'status': 1}
-        posts_found = self.blog_db.find(tags_q).sort("date", -1).limit(10)
+        posts_found = self.blog_db.find(tags_q).sort('date', -1).limit(10)
         for post in posts_found:
             approved_comments = []
             for comment in post['comments']:
@@ -186,7 +186,7 @@ class Blog(object):
             post['comment_count'] = len(approved_comments)
             posts.append(post)
         if not posts:
-            self.error = "Posts not found"
+            self.error = 'Posts not found'
         return posts
     
     
@@ -216,11 +216,11 @@ class Blog(object):
                 if comment['approval']:
                     comments.append(comment)
             post['comments'] = comments
-            author = self.users_db.find_one({"_id": post['author']})
+            author = self.users_db.find_one({'_id': post['author']})
             post['author'] = author['display_name']
             post['body'] = HtmlEmitter(Parser(post['body']).parse()).emit()
         else:
-            self.error = "Post not found"
+            self.error = 'Post not found'
         return post
     
     
@@ -237,13 +237,13 @@ class Blog(object):
             for comment in post['comments']:
                 if comment['approval'] == 1:
                     approved_comments.append(comment)
-            author = self.users_db.find_one({"_id": post['author']})
+            author = self.users_db.find_one({'_id': post['author']})
             post['author'] = author['display_name']
             post['body'] = HtmlEmitter(Parser(post['body']).parse()).emit()
             post['comment_count'] = len(approved_comments)
             posts.append(post)
         if not posts:
-            self.error = "Posts not found"
+            self.error = 'Posts not found'
         return posts
     
     
@@ -279,7 +279,7 @@ class Blog(object):
         for post in q:
             recent_posts.append(post)
         if not recent_posts:
-            self.error = "Posts not found"
+            self.error = 'Posts not found'
         return recent_posts
 
     
@@ -292,24 +292,25 @@ class Blog(object):
     
     def get_uri(self, post_id, post=None, ):
         if not post:
-            post = self.blog_db.find_one({"_id": post_id})
+            post = self.blog_db.find_one({'_id': post_id})
         if post:
             if post['type'] == self.POST_NS:
                 return '%s/%s' % (post['date'].strftime('%Y'), post['url'])
             else:
                 return 'special/%s' % post['url']
-        self.error = "Post not found"
+        self.error = 'Post not found'
         return False
     
     
     def get_unapproved_comments(self, ):
         comments = []
-        pending_comments = self.blog_db.find({"comments.approval": 0},
+        pending_comments = self.blog_db.find({'comments.approval': 0},
                                     fields=['comments']
-                                    ).sort("date", -1)
+                                    ).sort('date', -1)
         for post in pending_comments:
             for comment in post['comments']:
                 if comment['approval'] == 0:
+                    comment['post_id'] = post['_id']
                     comments.append(comment)
         return comments
 
@@ -330,7 +331,7 @@ class Links(object):
 
     
     def _create_id(self, ):
-        time = int(UTCDate().strftime("%s"))
+        time = int(UTCDate().strftime('%s'))
         return b36encode(time+randint(0,9001)).lower()
 
     
@@ -338,7 +339,7 @@ class Links(object):
         link_id = self._create_id()
         link_data = Validate(link_data, self.LINK)
         if not link_data:
-            self.error = "Missing/Invalid Parameters"
+            self.error = 'Missing/Invalid Parameters'
             return False
         self.links.insert({'_id': link_id,
                            'url': link_data['url'],
@@ -348,9 +349,9 @@ class Links(object):
 
     
     def delete_link(self, link_id, ):
-        res = self.links.remove({"_id": link_id})
+        res = self.links.remove({'_id': link_id})
         if not res['n']:
-            self.error = "Link ID not found"
+            self.error = 'Link ID not found'
         return res['n']
 
     
@@ -358,13 +359,13 @@ class Links(object):
         updates = {'$set': {}}
         link_data = Validate(link_data, self.LINK, require_all=False)
         if not link_data:
-            self.error = "Missing/Invalid Parameters"
+            self.error = 'Missing/Invalid Parameters'
             return False
         for key, value in link_data.items():
             updates['$set'][key] = value
-        res = self.links.update({"_id": link_id}, updates)
+        res = self.links.update({'_id': link_id}, updates)
         if not res['n']:
-            self.error = "Link ID not found"
+            self.error = 'Link ID not found'
         return res['n']
     
     
@@ -375,13 +376,13 @@ class Links(object):
     
     
     def get_link(self, link_id, ):
-        return self.links.find_one({"_id": link_id})
+        return self.links.find_one({'_id': link_id})
     
     def get_links(self, cannonical_author=False, ):
         links = []
         for link in self.links.find():
             if cannonical_author:
-                author = self.users.find_one({"_id": link['author']})
+                author = self.users.find_one({'_id': link['author']})
                 link['author'] = author['display_name']
             links.append(link)
         return links
@@ -396,29 +397,31 @@ class Sessions(object):
 
     
     def _clean_up(self, ):
-        return self.session_db.remove({"expiry": {"$lte": UTCDate()}})
+        query = {'$or': [{'expiry': {'$lte': UTCDate()}}, {'expiry': None}]}
+        return self.session_db.remove(query)
     
     
-    def create_session(self, user_id, ):
+    def create_session(self, user_id, session_lifespan=False, ):
         self._clean_up()
-        expiry = UTCDate(-86400)
-        s_id = sha256("%s%s" % (expiry,randint(0, 9000))).hexdigest()
-        user_session = {"user_id": user_id,
-                        "session_id": s_id,
-                        "expiry": expiry,
-                        }
+        s_id = sha256('%s%s' % (UTCDate(), randint(0, 9000))).hexdigest()
+        if session_lifespan:
+            s_len = UTCDate(session_lifespan)
+        else:
+            s_len = UTCDate(-86400)
+        user_session = {'user_id': user_id, 'session_id': s_id, 'expiry': s_len}
         self.session_db.insert(user_session)
         return user_session
     
     
     def expire_session(self, s_id):
-        res = self.session_db.remove({"session_id": s_id})
+        self._clean_up()
+        res = self.session_db.remove({'session_id': s_id})
         return res['n']
     
     
     def verify_session(self, session_id):
         self._clean_up()
-        session = self.session_db.find_one({"session_id": session_id})
+        session = self.session_db.find_one({'session_id': session_id})
         if session:
             return session['user_id']
         return session
@@ -442,45 +445,45 @@ class Users(object):
         self._client = db_conn if db_conn else DB_CONN
         self._db_handle = self._client[DB_SETTINGS['name']]
         self.db = self._db_handle.users
-        self.error = ""
+        self.error = ''
         
     
     def _make_hash(self, salt, password, ):
-        return sha512("%s%s" % (password, salt)).hexdigest()
+        return sha512('%s%s' % (password, salt)).hexdigest()
     
     
     def _make_salt(self, ):
         random_num = randint(0, 900000)
-        time_now = UTCDate().strftime("%s")
-        full_salt = sha512("%s%s" % (random_num, time_now)).hexdigest()
-        salt = "%s%s" % (full_salt[:5], full_salt[-5:])
+        time_now = UTCDate().strftime('%s')
+        full_salt = sha512('%s%s' % (random_num, time_now)).hexdigest()
+        salt = '%s%s' % (full_salt[:5], full_salt[-5:])
         return salt
     
     
     def create_user(self, user_data, ):
         user_data = Validate(user_data, self.USER)
         if not user_data:
-            self.error = "Missing/Invalid Paramters"
+            self.error = 'Missing/Invalid Paramters'
             return False
         salt = self._make_salt()
         new_user = {
-            "_id": user_data['username'],
-            "password": self._make_hash(salt, user_data['password']),
-            "salt": salt,
-            "create_date": UTCDate(),
-            "email_address": user_data['email_address'],
-            "display_name": user_data['display_name']
+            '_id': user_data['username'],
+            'password': self._make_hash(salt, user_data['password']),
+            'salt': salt,
+            'create_date': UTCDate(),
+            'email_address': user_data['email_address'],
+            'display_name': user_data['display_name']
         }
         try:
             self.db.insert(new_user)
         except pymongoerrors.DuplicateKeyError:
-            self.error = "User already exists"
+            self.error = 'User already exists'
             return False
         return True
     
     
     def delete_user(self, username, ):
-        res = self.db.remove({"_id": username})
+        res = self.db.remove({'_id': username})
         if not res['n']:
             self.error = 'User not found'
         return res['n']
@@ -494,7 +497,7 @@ class Users(object):
             return False
         for key, value in user_data.items():
             updates['$set'][key] = value
-        res = self.db.update({"_id": username}, updates)
+        res = self.db.update({'_id': username}, updates)
         if not res['n']:
             self.error = 'User not found'
         return res['n']
@@ -506,9 +509,9 @@ class Users(object):
             return False
         salt = self._make_salt()
         new_hash = self._make_hash(salt, password_data['new_password'])
-        res = self.db.update({"_id": username},
-                             {"$set": {"password": new_hash},
-                              "$set": {"salt": salt}})
+        res = self.db.update({'_id': username},
+                             {'$set': {'password': new_hash},
+                              '$set': {'salt': salt}})
         if not res['n']:
             self.error = 'User not found'
         return res['n']
@@ -521,7 +524,7 @@ class Users(object):
 
 
     def get_user(self, username, ):
-        return self.db.find_one({"_id": username})
+        return self.db.find_one({'_id': username})
     
     
     def get_users(self, ):
@@ -531,18 +534,18 @@ class Users(object):
             users.append(user)
         return users
 
-    
+
     def verify_login(self, login_data, ):
         login_data = Validate(login_data, self.LOGIN)
         if not login_data:
-            self.error = "Invalid login. Please try again."
+            self.error = 'Invalid login. Please try again.'
             return False
-        user_data = self.db.find_one({"_id": login_data['username']})
+        user_data = self.db.find_one({'_id': login_data['username']})
         if not user_data:
-            self.error = "Invalid login. Please try again."
+            self.error = 'Invalid login. Please try again.'
             return False
         given_pw_hash = self._make_hash(user_data['salt'], login_data['password'])
         if given_pw_hash != user_data['password']:
-            self.error = "Invalid login. Please try again."
+            self.error = 'Invalid login. Please try again.'
             return False
         return user_data
