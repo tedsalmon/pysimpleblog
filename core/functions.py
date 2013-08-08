@@ -31,7 +31,7 @@ class Settings(dict):
 
     def __init__(self, *args, **kw):
         super(Settings, self).__init__()
-        self.itemlist = super(Settings, self).keys()
+        self.itemlist = super(Settings, self)
         self._last_edited = 0
         self._fileLoad()
     
@@ -62,7 +62,7 @@ class Settings(dict):
         data.close()
 
     def keys(self):
-        return self.itemlist
+        return self.itemlist.keys()
     
     def values(self):
         return [self[key] for key in self]

@@ -9,9 +9,8 @@ from pymongo import MongoClient, errors as pymongoerrors
 from random import randint
 from pysimpleblog.core.functions import b36encode, Settings, UTCDate
 
-_s = Settings()
-DB_SETTINGS = _s['database']
-DB_CONN = MongoClient(DB_SETTINGS['address'])
+settings = Settings()
+DB_CONN = MongoClient(settings['database_address'])
 
 
 def Validate(data, fields, require_all=True, ):
@@ -52,7 +51,7 @@ class Blog(object):
     
     def __init__(self, db_conn=False, ):
         self._client = db_conn if db_conn else DB_CONN
-        self._db_handle = self._client[DB_SETTINGS['name']]
+        self._db_handle = self._client[settings['database_name']]
         self.blog_db = self._db_handle.entries
         self.users_db = self._db_handle.users
         self.error = False
@@ -324,7 +323,7 @@ class Links(object):
     
     def __init__(self, db_conn=False, ):
         self._client = db_conn if db_conn else DB_CONN
-        self._db_handle = self._client[DB_SETTINGS['name']]
+        self._db_handle = self._client[settings['database_name']]
         self.users = self._db_handle.users
         self.links = self._db_handle.links
         self.error = False
@@ -392,7 +391,7 @@ class Sessions(object):
     
     def __init__(self, db_conn=False, ):
         self._client = db_conn if db_conn else DB_CONN
-        self._db_handle = self._client[DB_SETTINGS['name']]
+        self._db_handle = self._client[settings['database_name']]
         self.session_db = self._db_handle.sessions
 
     
@@ -443,7 +442,7 @@ class Users(object):
     
     def __init__(self, db_conn=False, ):
         self._client = db_conn if db_conn else DB_CONN
-        self._db_handle = self._client[DB_SETTINGS['name']]
+        self._db_handle = self._client[settings['database_name']]
         self.db = self._db_handle.users
         self.error = ''
         

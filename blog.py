@@ -89,7 +89,10 @@ def show_tags(tag_name, login_data=False, ):
 @blog_app.route('/admin', apply=[auth_check(required=True)])
 def show_admin(login_data=False, ):
     page_variables = generate_pagevars(login_data, 'Admin')
-    return template('admin/settings', page_variables, settings=settings)
+    opts = settings.keys()
+    opts.sort()
+    return template('admin/settings', page_variables, opts=opts,
+                    settings=settings)
 
 
 @blog_app.route('/admin/new-post', apply=[auth_check(required=True)])

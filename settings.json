@@ -7,11 +7,9 @@
     "site_keywords": "site, keywords, go, here",
     "site_url": "",
     "site_ga_key": "",
-    "database":{
-        "address": "127.0.0.1",
-        "username": "",
-        "password": "",
-        "name": "blog"
-    },
+    "database_address": "127.0.0.1",
+    "database_username": "",
+    "database_password": "",
+    "database_name": "blog",
     "debug": false
 }

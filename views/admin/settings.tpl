@@ -7,7 +7,8 @@
 </header>
 <hr />
 <form class="form-horizontal">
-{% for key, val in settings.items() %}
+{% for key in opts %}
+{% set val=settings[key]%}
 {% set name=key.replace('_',' ').title() %}
     <div class="control-group">
         <label class="control-label" for="settings_{{key}}">{{name}}</label>
