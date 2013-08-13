@@ -108,6 +108,9 @@ article + article{
     margin: 1em 0em 1em 0em;
 }
 /* Helpers */
+.clickable{
+    cursor: pointer;
+}
 .divider-right{
     border-right: 1px solid #ddd;
 }
@@ -139,13 +142,15 @@ article + article{
     width: 25%;
 }
 @media (min-width: 768px){
+    .blog-user{
+        margin-top: 10px;
+        padding-left: 20px;
+        display: inline-block;
+        float: right;
+    }
     .blog-main{
         width: 85%;
         padding-bottom: 1em;
-    }
-    .blog-user{
-        margin-top: -30px;
-        padding-right: 20px;
     }
     .blog-admin-nav{
         margin-left: 20px;
@@ -188,5 +193,10 @@ article + article{
     }
     .long-textarea{
         width: 85%;
+    }
+    .blog-user{
+        float: left !important;
+        margin-left: 20px;
+        margin-bottom: 20px;
     }
 }

@@ -153,14 +153,6 @@ def show_profile(login_data=False, ):
                     profile_data=profile_data)
 
 
-@blog_app.route('/logout', apply=[auth_check()])
-def do_logout(login_data=False, ):
-    if login_data:
-        s_id = request.get_cookie('session_id')
-        sessions.expire_session(s_id)
-        response.delete_cookie(s_id)
-    redirect('/')
-
 #
 # RESTful API Begins here
 # Read-only functions:
@@ -176,12 +168,26 @@ def api_login():
         return return_data
     # Start Session
     s_timeout = None
-    if 'remember' in request.json:
+    try:
         if request.json['remember'] == 1:
             s_timeout = -86400 * 90
-    session = sessions.create_session(user['_id'], session_lifespan=s_timeout)
+    except KeyError:
+        pass
+    session = sessions.create_session(user['_id'], session_timeout=s_timeout)
     response.set_cookie('session_id', session['session_id'],
                         expires=session['expiry'], path='/', )
+    return return_data
+
+
+@blog_app.route('/api/v1/logout', method='POST', apply=[auth_check()])
+def do_logout(login_data=False, ):
+    return_data = {'error': False}
+    if login_data:
+        s_id = request.get_cookie('session_id')
+        sessions.expire_session(s_id)
+        response.delete_cookie(s_id)
+    else:
+        return_data['error'] = 'No session to delete'
     return return_data
 
 
@@ -324,7 +330,7 @@ def error_handler(error, ):
     page_variables, strace = {}, False
     if settings['debug'] and error.traceback:
         strace = error.traceback
-    if '404' in response.status:
+    if '404' in response.status or '403' in response.status:
         page_variables = generate_pagevars(verify_auth(), 'Error')
     return template('error', page_variables, error=msg,
                     stacktrace=strace)

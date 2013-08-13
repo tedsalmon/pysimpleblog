@@ -3,25 +3,26 @@ pysimpleblog
 
 A Simple blogging framework written in Python with the help of Bottle and MongoDB as a backend.
 
-Why?
-===
 
-I started this project because I didn't want to use WordPress and also so that I could get more exposure to MongoDB and Bottle.py.
+Setup
+=====
+
+1. Clone the repo wherever you would like
+
+2. Edit settings.json with your settings
+
+3. Run `python setup.py` to create an account and the run `python app.wsgi` to start the web app in the Python debug server. The app.wsgi file is already mod_wsgi compatible.
+
 
 Features
 ========
 
-* Simple, easy to use interface.
-* RESTful API! (Docoumentation comming)
+* Easy to use interface
+* RESTful API - Docoumentation comming
+* Bootstrap based
+* Wiki Creole formatting available
 
 
-Roadmap
-=======
-
-* Improve JavaScript
-* User Management
-* Image uploads
-* More comprehensive setup via setup.py
 
 Requirements
 ============
@@ -35,11 +36,14 @@ Requirements
 
 * MongoDB 2.2.0+
 
-Setup
-=====
 
-1. Clone the repo wherever you would like
+Roadmap
+=======
 
-2. Edit settings.json with your settings
+* Improve JavaScript
+* User Management
+* Image uploads
+* More comprehensive setup via setup.py
 
-3. Run `python setup.py` to create an account and the run `python app.wsgi` to start the web app in the Python debug server. The app.wsgi file is already mod_wsgi compatible.
+
+

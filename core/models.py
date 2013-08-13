@@ -400,14 +400,16 @@ class Sessions(object):
         return self.session_db.remove(query)
     
     
-    def create_session(self, user_id, session_lifespan=False, ):
+    def create_session(self, user_id, session_timeout=None, ):
         self._clean_up()
         s_id = sha256('%s%s' % (UTCDate(), randint(0, 9000))).hexdigest()
-        if session_lifespan:
-            s_len = UTCDate(session_lifespan)
+        if session_timeout:
+            session_timeout = UTCDate(session_timeout)
         else:
-            s_len = UTCDate(-86400)
-        user_session = {'user_id': user_id, 'session_id': s_id, 'expiry': s_len}
+            session_timeout = UTCDate(-7200)
+        user_session = {'user_id': user_id,
+                        'session_id': s_id,
+                        'expiry': session_timeout}
         self.session_db.insert(user_session)
         return user_session
     

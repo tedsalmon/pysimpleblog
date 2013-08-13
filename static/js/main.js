@@ -62,6 +62,7 @@ Blog = {
 	    setTimeout($('#login_username').focus, 500);
 	});
 	$('#login_btn').click(this.doLogin);
+	$('.blog-logout').click(this.doLogout);
     },
     createComment: function(){
 	$elements = {'comment_name': {'required': 1, 'err_msg': 'your name.', 'clear_value': 1},
@@ -112,11 +113,21 @@ Blog = {
 		    $login_err.fadeIn();
 		    $('#login_password').select();
 		}else{
-		    //location.reload();
-		    return false;
+		    location.reload();
 		}
 	    }
 	});
 	return false;
+    },
+    doLogout: function(){
+	$.ajax({
+	    url: '/api/v1/logout',
+	    type: 'POST',
+	    contentType: 'application/json; charset=utf-8',
+	    error: Blog._error,
+	    success: function($return_data) {
+		location.reload();
+	    }
+	});
     }
 };

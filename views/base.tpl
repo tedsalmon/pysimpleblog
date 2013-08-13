@@ -19,21 +19,6 @@
                 <hgroup>
                     <h2 class="blog-brand"><a class="muted blog-brand-link" href="/">{{site_header}}</a></h2>
                     <h5 class="muted">{{site_subheader}}</h5>
-                    {% if user_id %}
-                    <span class="dropdown visible-desktop pull-right blog-user">
-                        <span class="icon-white icon-user"></span>
-                        <a class="dropdown-toggle muted" data-toggle="dropdown" href="#">Hello, {{user_id}} <b class="muted-border caret"></b></a>
-                        <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                            <li><a href="/admin/view-profile">My Profile</a></li>
-                            <li><a href="/logout">Logout</a></li>
-                        </ul>
-                    </span>
-                    {% else %}
-                    <span class="visible-desktop pull-right blog-user">
-                        <span class="icon-white icon-user"></span>
-                        <a id="login_modal_btn" class="muted" href="#">Login</a>
-                    </span>
-                    {% endif %}
                 </hgroup>
             </header>
             <div class="navbar">
@@ -68,6 +53,21 @@
                                     <input type="hidden" name="q" value="site:{{site_url}}">
                                     <input type="text" class="search-query" name="q" results="0" placeholder="Search">
                                 </form>
+                            {% if user_id %}
+                                <span class="dropdown blog-user">
+                                    <span class="icon-user"></span>
+                                    <a class="dropdown-toggle muted clickable" data-toggle="dropdown">Hello, {{user_id}} <b class="muted-border caret"></b></a>
+                                    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+                                        <li><a href="/admin/view-profile">My Profile</a></li>
+                                        <li><a class="blog-logout clickable">Logout</a></li>
+                                    </ul>
+                                </span>
+                            {% else %}
+                                <span class="blog-user">
+                                    <span class="icon-user"></span>
+                                    <a id="login_modal_btn" class="muted clickable">Login</a>
+                                </span>
+                            {% endif %}
                             </div>
                         </nav>
                     </div>
@@ -123,7 +123,8 @@
                 <form class="form text-center" action="#">
                     <div class="control-group">
                         <div class="controls">
-                            <a id="delete_confirm" class="btn" href="#" data-dismiss="modal">Yes</a><a class="left-space btn" href="#" data-dismiss="modal">No</a>
+                            <a id="delete_confirm" class="btn clickable" data-dismiss="modal">Yes</a>
+                            <a class="left-space btn clickable" data-dismiss="modal">No</a>
                         </div>
                     </div>
                 </form>
