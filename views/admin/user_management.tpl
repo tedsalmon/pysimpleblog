@@ -19,7 +19,7 @@
     <tbody>
 {% for user in users %}
     <tr data-link-id="{{user['_id']}}">
-        <td><h title="Click to edit" class="edit-user editable link-title" data-name="title" data-type="text">{{user['_id']}}</h></td>
+        <td>{{user['_id']}}</td>
         <td><h title="Click to edit" class="edit-user editable link-url" data-name="url" data-type="text">{{user['display_name']}}</h></td>
         <td><h title="Click to edit" class="edit-user editable link-url" data-name="url" data-type="text">{{user['email_address']}}</h></td>
         <td><a title="Delete Link" class="delete-user icon-ban-circle" href="#"></a></td>
@@ -54,6 +54,18 @@
                 <label class="control-label" for="user_email_address">Email Address</label>
                 <div class="controls">
                     <input id='user_email_address' type="text" placeholder="Email Address">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="user_password">Password</label>
+                <div class="controls">
+                    <input id='user_password' type="password" placeholder="Password">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="user_password">Confirm</label>
+                <div class="controls">
+                    <input id='user_password_confirm' type="password" placeholder="Confirm Password">
                 </div>
             </div>
             <div class="control-group">

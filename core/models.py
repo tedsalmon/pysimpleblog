@@ -56,6 +56,14 @@ class Blog(object):
         self.users_db = self._db_handle.users
         self.error = False
     
+    
+    def _comment_emitter(self, body, ):
+        temp_body = []
+        for line in body.split('\n'):
+            temp_body.append('<p>%s</p>' % line)
+        return ''.join(temp_body)
+    
+    
     def _create_id(self, ):
         time = int(UTCDate().strftime('%s'))
         return b36encode(time+randint(0,9001)).lower()
@@ -83,14 +91,15 @@ class Blog(object):
         return res['n']
     
     
-    def create_comment(self, post_id, form_data, ):
+    def create_comment(self, post_id, form_data, src_ip, is_authed=False, ):
         comment_data = Validate(form_data, self.COMMENT_FIELDS)
         if not comment_data:
             self.error = 'Parent post not found.'
             return False
         comment_data['id'] = self._create_id()
         comment_data['date'] = UTCDate()
-        comment_data['approval'] = 0
+        comment_data['approval'] = int(is_authed)
+        comment_data['IP'] = src_ip
         res = self.blog_db.update({'_id': post_id},
                             {'$push': {'comments': comment_data}})
         if not res['n']:
@@ -178,6 +187,7 @@ class Blog(object):
             approved_comments = []
             for comment in post['comments']:
                 if comment['approval'] == 1:
+                    comment
                     approved_comments.append(comment)
             author = self.users_db.find_one({'_id': post['author']})
             post['author'] = author['display_name']
@@ -213,6 +223,7 @@ class Blog(object):
             comments = []
             for comment in post['comments']:
                 if comment['approval']:
+                    comment['body'] = self._comment_emitter(comment['body'])
                     comments.append(comment)
             post['comments'] = comments
             author = self.users_db.find_one({'_id': post['author']})
@@ -310,8 +321,15 @@ class Blog(object):
             for comment in post['comments']:
                 if comment['approval'] == 0:
                     comment['post_id'] = post['_id']
+                    comment['body'] = self._comment_emitter(comment['body'])
                     comments.append(comment)
         return comments
+    
+    
+    def get_unapproved_comments_count(self, ):
+        pending_comments = self.blog_db.find({'comments.approval': 0}).count()
+        return pending_comments
+    
 
 
 class Links(object):
@@ -406,7 +424,7 @@ class Sessions(object):
         if session_timeout:
             session_timeout = UTCDate(session_timeout)
         else:
-            session_timeout = UTCDate(-7200)
+            session_timeout = UTCDate(-86400)
         user_session = {'user_id': user_id,
                         'session_id': s_id,
                         'expiry': session_timeout}
@@ -429,6 +447,9 @@ class Sessions(object):
     
     
 class Users(object):
+    
+    EDITOR = 1
+    ADMIN = 2
     
     LOGIN = {
         'username': {'reqired': 1, 'escape': 0},
@@ -518,14 +539,22 @@ class Users(object):
         return res['n']
     
     
+    def get_access_level(self, user_id, ):
+        user = self.get_user(user_id)
+        if user:
+            return user['access_level']
+        self.error = 'User not found'
+        return False
+    
+    
     def get_last_error(self, ):
         error = self.error
         self.error = False
         return error
 
 
-    def get_user(self, username, ):
-        return self.db.find_one({'_id': username})
+    def get_user(self, user_id, ):
+        return self.db.find_one({'_id': user_id})
     
     
     def get_users(self, ):

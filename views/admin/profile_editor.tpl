@@ -5,6 +5,9 @@
 	<div class="controls">
 	    <input id="profile_name" class="longer" type="text" placeholder="Display Name" {% if profile_data %}value="{{profile_data['display_name']}}"{% endif %} />
 	</div>
+	<div class="controls">
+	    <input id="profile_name" class="longer" type="text" placeholder="Email Address" {% if profile_data %}value="{{profile_data['email']}}"{% endif %} />
+	</div>
     </div>
     <div class="control-group">
 	<div class="controls">

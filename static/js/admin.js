@@ -1,6 +1,8 @@
 Blog.Admin = {
     init: function(){
-	$.fn.editableform.buttons = ''; //< Override x-editable buttons
+	// Override x-editable buttons
+	$.fn.editableform.buttons = '<a class="blog-edit-control clickable icon-ok editable-submit"></a>\
+				     <a class="blog-edit-control clickable icon-remove editable-cancel"></a>';
 	this.bindUIActions();
     },
     bindUIActions: function(){
@@ -21,13 +23,21 @@ Blog.Admin = {
 	$('.delete-link').click(this.deleteLink);
 	$('.edit-link').editable({'mode': 'inline',
 				'url': this.editLink,
+				'clear': false,
+				'placeholder': 'Click to edit...',
 				'tpl': '<input type="text" class="input-medium input-small-height"/>'});
 	$('.edit-settings').editable({'mode': 'inline',
 				'url': this.editSettings,
+				'clear': false,
 				'tpl': '<input type="text" class="input-medium input-small-height"/>'});
+	$('.edit-settings-bool').editable({'mode': 'inline'});
 	$('.edit-user').editable({'mode': 'inline',
 				'url': this.editUser,
+				'clear': false,
 				'tpl': '<input type="text" class="input-medium input-small-height"/>'});
+	$('#user_add_trigger').click(function(){
+	    $('#user_add_modal').modal(); 
+	});
     },
     createPost: function(){
 	$elements = {

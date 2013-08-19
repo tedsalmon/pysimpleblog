@@ -28,7 +28,7 @@ article + article{
     padding-bottom: 1em;
 }
 .blog-comments{
-    width: 40%;
+    width: 55%;
     padding-bottom: .75em;
 }
 .blog-comment-count{
@@ -92,11 +92,21 @@ article + article{
     width: 75%;
     height: 375px;
     overflow-y: auto;
-     resize: none;
+    resize: none;
+}
+.blog-post-textarea-small{
+    width: 85%;
+    height: 100px;
+    overflow-y: auto;
+    resize: none;
 }
 .blog-login-remember{
     display: inline;
     padding-left: 5px;
+}
+.blog-edit-control{
+    opacity: 0.3;
+    z-index: 100;
 }
 .blog-recent{
     margin: 0px;
@@ -106,6 +116,10 @@ article + article{
 }
 .blog-tags{
     margin: 1em 0em 1em 0em;
+}
+/* Overrides! */
+.editable-click{
+    border-bottom: none !important;
 }
 /* Helpers */
 .clickable{
@@ -128,6 +142,9 @@ article + article{
 }
 .longer{
     width: 25%;
+}
+.longest{
+    width: 50%;
 }
 .long-textarea{
     width: 35%;

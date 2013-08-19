@@ -101,11 +101,12 @@ Blog = {
 	if (!$login_data)
 	    return false;
 	$.ajax({
-	    url: '/api/v1/login',
+	    url: '/api/v1/session',
 	    type: 'POST',
 	    contentType: 'application/json; charset=utf-8',
 	    data: JSON.stringify($login_data),
 	    error: Blog._error,
+	    beforeSend: Blog._addAuth,
 	    success: function($return_data) {
 		if($return_data.error){
 		    $login_err = $('#login_output');
@@ -121,8 +122,8 @@ Blog = {
     },
     doLogout: function(){
 	$.ajax({
-	    url: '/api/v1/logout',
-	    type: 'POST',
+	    url: '/api/v1/session',
+	    type: 'DELETE',
 	    contentType: 'application/json; charset=utf-8',
 	    error: Blog._error,
 	    success: function($return_data) {

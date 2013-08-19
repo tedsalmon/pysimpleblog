@@ -13,25 +13,25 @@ links = Links()
 # Settings
 settings = Settings()
 
-def auth_check(required=False, api=False, ):
+def auth_check(access=False, api=False, ):
     # This has to be applied to routes via
     # the 'apply' param because of a bug in Bottle
     # https://github.com/defnull/bottle/issues/384
     def decorator(fn):
         def wrapper(*args, **kwargs):
-            auth_status = verify_auth()
-            kwargs.update(login_data=auth_status)
-            if not auth_status:
-                if required:
-                    if not api:
-                        abort(403, "Forbidden")
-                    else:
-                        realm = 'Basic realm="API"'
-                        err_msg = "Please provide BASIC auth or a Session ID"
-                        response.headers['WWW-Authenticate'] = realm
-                        response.status = 401
-                        return {"error": err_msg}
-                return fn(*args, **kwargs)
+            error = False
+            auth_data = verify_auth()
+            kwargs.update(login_data=auth_data)
+            if not auth_data and access:
+                error = "Not authorized"
+            if auth_data[1] < access:
+                error = "Insufficient Access"
+            if error:
+                if api:
+                    response.status = 403
+                    return {"error": error}
+                else:
+                    abort(403, "Forbidden")
             return fn(*args, **kwargs)
         return wrapper
     return decorator
@@ -86,16 +86,17 @@ def show_tags(tag_name, login_data=False, ):
 
 
 # Admin functions
-@blog_app.route('/admin', apply=[auth_check(required=True)])
+@blog_app.route('/admin', apply=[auth_check(access=users.EDITOR)])
 def show_admin(login_data=False, ):
     page_variables = generate_pagevars(login_data, 'Admin')
-    opts = settings.keys()
-    opts.sort()
-    return template('admin/settings', page_variables, opts=opts,
-                    settings=settings)
+    # opts = settings.keys()
+    # opts.sort()
+    # settings=settings,
+    cmnts = entries.get_unapproved_comments_count()
+    return template('admin/main', page_variables, comment_count=cmnts)
 
 
-@blog_app.route('/admin/new-post', apply=[auth_check(required=True)])
+@blog_app.route('/admin/new-post', apply=[auth_check(access=users.EDITOR)])
 def show_new_post(login_data=False, ):
     page_variables = generate_pagevars(login_data, 'New Post')
     return template('admin/post_editor', page_variables)
@@ -103,7 +104,7 @@ def show_new_post(login_data=False, ):
 
 # @todo Rename edit-post
 @blog_app.route('/admin/post-editor/<post_id:re:[a-z0-9]{6}>',
-                apply=[auth_check(required=True)])
+                apply=[auth_check(access=users.EDITOR, )])
 def show_post_editor(post_id, login_data=False, ):
     post = entries.get_post_internal(post_id)
     if not post:
@@ -112,9 +113,10 @@ def show_post_editor(post_id, login_data=False, ):
     return template('admin/post_editor', page_variables, post_data=post)
 
 
-@blog_app.route('/admin/manage-posts', apply=[auth_check(required=True)])
+@blog_app.route('/admin/manage-posts',
+                apply=[auth_check(access=users.EDITOR)])
 @blog_app.route('/admin/manage-posts/<page_num:int>',
-                apply=[auth_check(required=True)])
+                apply=[auth_check(access=users.EDITOR)])
 def show_post_manager(page_num=1, login_data=False, ):
     posts = entries.get_posts(page_num, all_posts=True)
     if not posts:
@@ -123,31 +125,36 @@ def show_post_manager(page_num=1, login_data=False, ):
     return template('admin/post_management', page_variables, posts=posts)
 
 
-@blog_app.route('/admin/comment-approver', apply=[auth_check(required=True)])
+@blog_app.route('/admin/comment-approver',
+                apply=[auth_check(access=users.EDITOR)])
 def show_pending_comments(login_data=False, ):
     comments = entries.get_unapproved_comments()
     page_variables = generate_pagevars(login_data, 'Manage Comments')
     return template('admin/comment_management', page_variables, comments=comments)
 
-@blog_app.route('/admin/manage-links', apply=[auth_check(required=True)])
+
+@blog_app.route('/admin/manage-links',
+                apply=[auth_check(access=users.ADMIN)])
 def show_link_manager(login_data=False, ):
     page_variables = generate_pagevars(login_data, 'Manage Links')
     return template('admin/link_management', page_variables,
                     links=links.get_links(True))
 
 
-@blog_app.route('/admin/manage-users', apply=[auth_check(required=True)])
+@blog_app.route('/admin/manage-users', apply=[auth_check(access=users.ADMIN)])
 def show_link_manager(login_data=False, ):
     page_variables = generate_pagevars(login_data, 'Manage Users')
     return template('admin/user_management', page_variables,
                     users=users.get_users())
 
 
-@blog_app.route('/admin/view-profile', apply=[auth_check(required=True)])
+@blog_app.route('/admin/view-profile',
+                apply=[auth_check(access=users.EDITOR)])
 def show_profile(login_data=False, ):
-    profile_data = users.get_user(login_data)
+    username, access = login_data
+    profile_data = users.get_user(username)
     if not profile_data:
-        abort("404", "Not Found")
+        abort(404, "Not Found")
     page_variables = generate_pagevars(login_data, 'Edit Profile')
     return template("admin/profile_editor", page_variables,
                     profile_data=profile_data)
@@ -157,9 +164,9 @@ def show_profile(login_data=False, ):
 # RESTful API Begins here
 # Read-only functions:
 # GET => /api/v1/post, GET => /api/v1/posts, POST => /api/v1/comment
-# All other functions require BASIC Auth or a Session ID Cookie
+# All other functions require X-Auth-Token or a Session ID Cookie
 #
-@blog_app.route('/api/v1/login', method='POST')
+@blog_app.route('/api/v1/session', method='POST')
 def api_login():
     return_data = {'error': False}
     user = users.verify_login(request.json)
@@ -176,14 +183,16 @@ def api_login():
     session = sessions.create_session(user['_id'], session_timeout=s_timeout)
     response.set_cookie('session_id', session['session_id'],
                         expires=session['expiry'], path='/', )
+    return_data['X-Auth-Session'] = session['session_id']
     return return_data
 
 
-@blog_app.route('/api/v1/logout', method='POST', apply=[auth_check()])
-def do_logout(login_data=False, ):
+@blog_app.route('/api/v1/session', method='DELETE', apply=[auth_check()])
+def apli_logout(login_data=False, ):
     return_data = {'error': False}
+    r = request #< The things I do for PEP8...
     if login_data:
-        s_id = request.get_cookie('session_id')
+        s_id = r.get_header('X-Auth-Token') or r.get_cookie('session_id')
         sessions.expire_session(s_id)
         response.delete_cookie(s_id)
     else:
@@ -198,14 +207,14 @@ def api_post_list(page_num, ):
 
 
 @blog_app.route('/api/v1/post', method='POST',
-                apply=[auth_check(required=True, api=True)])
+                apply=[auth_check(access=users.EDITOR, api=True)])
 def api_post_create(login_data=False, ):
     return_data = {'error': False}    
     new_post = entries.create_post(request.json, login_data)
     if not new_post:
         return_data['error'] = entries.get_last_error()
-        return return_data
-    return_data['location'] = new_post
+    else:
+        return_data['location'] = new_post
     return return_data
 
 
@@ -216,17 +225,16 @@ def api_post_get(post_id, ):
 
 
 @blog_app.route('/api/v1/post/<post_id>', method='DELETE',
-                apply=[auth_check(required=True, api=True)])
+                apply=[auth_check(access=users.EDITOR, api=True)])
 def api_post_delete(post_id, login_data=False, ):
     return_data = {'error': False}
     if not entries.delete_post(post_id):
         return_data['error'] = entries.get_last_error()
-        return return_data
     return return_data
 
 
 @blog_app.route('/api/v1/post/<post_id>', method='PUT',
-                apply=[auth_check(required=True, api=True)])
+                apply=[auth_check(access=users.EDITOR, api=True)])
 def api_post_edit(post_id, login_data=False, ):
     return_data = {'error': False}
     res = entries.edit_post(post_id, request.json)
@@ -248,28 +256,29 @@ def api_comment_create(post_id, ):
 
 
 @blog_app.route('/api/v1/post/<post_id>/comment/<comment_id>', method='PUT',
-                apply=[auth_check(required=True, api=True)])
+                apply=[auth_check(access=users.EDITOR, api=True)])
 def api_comment_approve(comment_id, post_id, login_data=False, ):
     return {"error": not bool(entries.approve_comment(post_id, comment_id))}
 
 
 @blog_app.route('/api/v1/post/<post_id>/comment/<comment_id>', method='DELETE',
-                apply=[auth_check(required=True, api=True)])
+                apply=[auth_check(access=users.EDITOR, api=True)])
 def api_comment_deny(comment_id, post_id, login_data=False, ):
     return {"error": not bool(entries.deny_comment(post_id, comment_id))}
 
 
 @blog_app.route('/api/v1/link', method='POST',
-                apply=[auth_check(required=True, api=True)])
+                apply=[auth_check(access=users.ADMIN, api=True)])
 def api_link_create(login_data=False, ):
     return_data = {'error': False}
-    if not links.create_link(request.json, login_data):
+    user_ip = request['REMOTE_ADDR'] or request['X-Real-IP']
+    if not links.create_link(request.json, login_data, user_ip, login_data):
         return_data['error'] = links.get_last_error()
     return return_data
 
 
 @blog_app.route('/api/v1/link/<link_id>', method='DELETE',
-                apply=[auth_check(required=True, api=True)])
+                apply=[auth_check(access=users.ADMIN, api=True)])
 def api_link_delete(link_id, login_data=False, ):
     return_data = {'error': False}
     if not links.delete_link(link_id):
@@ -278,7 +287,7 @@ def api_link_delete(link_id, login_data=False, ):
 
 
 @blog_app.route('/api/v1/link/<link_id>', method='PUT',
-                apply=[auth_check(required=True, api=True)])
+                apply=[auth_check(access=users.ADMIN, api=True)])
 def api_link_edit(link_id, login_data=False, ):
     return_data = {'error': False}
     if not links.edit_link(link_id, request.json):
@@ -287,7 +296,7 @@ def api_link_edit(link_id, login_data=False, ):
 
 
 @blog_app.route('/api/v1/user', method='POST',
-                apply=[auth_check(required=True, api=True)])
+                apply=[auth_check(access=users.ADMIN, api=True)])
 def api_create_user(login_data=False, ):
     return_data = {'error': False}
     if not users.create_user(request.json):
@@ -296,10 +305,24 @@ def api_create_user(login_data=False, ):
 
 
 @blog_app.route('/api/v1/changepassword/<username>', method='PUT',
-                apply=[auth_check(required=True, api=True)])
+                apply=[auth_check(access=users.EDITOR, api=True)])
 def api_password_edit(login_data=False, ):
     return_data = {'error': False}
     #@TODO Implement
+    return return_data
+
+@blog_app.route('/api/v1/settings/<settings_key>', method='PUT',
+                apply=[auth_check(access=users.ADMIN, api=True)])
+def api_settings_edit(settings_key, login_data=False, ):
+    return_data = {'error': False}
+    keys = settings.keys()
+    if settings_key in keys:
+        try:
+            settings[settings_key] = request.json['val']
+        except KeyError:
+            return_data['error'] = 'No value in request data'
+    else:
+        return_data['error'] = 'Invalid settings key'
     return return_data
 
 # Static handler when run in debug mode
@@ -338,8 +361,14 @@ def error_handler(error, ):
 # Helper methods
 def generate_pagevars(login_data=False, sub_title=False, keywords=False, ):
     nav_links = links.get_links()
+    user_id, access = False, False 
+    if login_data:
+        user_id, access = login_data
     return_data = {
-        'user_id': login_data, 'nav_links': nav_links, 'sub_title': sub_title
+        'user_id': user_id,
+        'access_level': access,
+        'nav_links': nav_links,        
+        'sub_title': sub_title
     }
     for key, val in settings.items():
         if 'site_' in key:
@@ -352,16 +381,9 @@ def generate_pagevars(login_data=False, sub_title=False, keywords=False, ):
 
 
 def verify_auth():
-    s_id = request.get_cookie('session_id')
-    auth = request.auth
-    if not s_id and not auth:
-        return False
-    login_data = sessions.verify_session(s_id)
-    if login_data:
-        return login_data
-    if auth:
-        user, passwd = auth
-        login_data = users.verify_login(user, passwd)
-        if login_data:
-            return login_data['username']
+    token = request.get_header('X-Auth-Token') or request.get_cookie('session_id')
+    session_user = sessions.verify_session(token)
+    if session_user:
+        access = users.get_access_level(session_user)
+        return (session_user, access)
     return False
