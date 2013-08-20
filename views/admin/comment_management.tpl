@@ -10,7 +10,7 @@
 <div class="blog-comments">
     {% for comment in comments %}
     <div data-post-id="{{comment['post_id']}}" data-comment-id="{{comment['id']}}" class="comment">
-	<div>{{comment['name']}} wrote on {{comment['date'].strftime("%B %d, %Y %H:%M")}}:</div>
+	<div>{{comment['name']}} wrote on {{comment['date'].strftime("%B %d, %Y %H:%M")}} from IP {{comment['IP']|e}}:</div>
 	<div class="blog-comment-body">{{comment['body']}}</div>
         <div class="control-group">
             <div class="control-group">

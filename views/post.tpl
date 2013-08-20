@@ -8,12 +8,12 @@
         <div class="control-group">
             <div class="control-group">
                 <div class="controls">
-                    <input type="text" id="comment_name" placeholder="Name">
+                    <input type="text" id="comment_name" placeholder="Name"{% if user_dn %}value="{{user_dn}}"{% endif %}>
                 </div>
             </div>
             <div class="control-group">
                 <div class="controls">
-                    <input type="text" id="comment_email" placeholder="Email">
+                    <input type="text" id="comment_email" placeholder="Email"{% if user_email %}value="{{user_email}}"{% endif %}>
                 </div>
             </div>
             <div class="control-group">

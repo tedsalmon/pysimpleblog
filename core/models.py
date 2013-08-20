@@ -7,6 +7,7 @@ from hashlib import sha256, sha512
 from jinja2 import utils
 from pymongo import MongoClient, errors as pymongoerrors
 from random import randint
+from socket import gethostbyaddr, herror
 from pysimpleblog.core.functions import b36encode, Settings, UTCDate
 
 settings = Settings()
@@ -320,6 +321,12 @@ class Blog(object):
         for post in pending_comments:
             for comment in post['comments']:
                 if comment['approval'] == 0:
+                    try:
+                        if comment['IP']: #< If IP get PTR for user
+                            name, _, _ = gethostbyaddr(comment['IP'])
+                            comment['IP'] = '%s [%s]' % (name, comment['IP'])
+                    except herror:
+                        pass
                     comment['post_id'] = post['_id']
                     comment['body'] = self._comment_emitter(comment['body'])
                     comments.append(comment)
@@ -448,8 +455,19 @@ class Sessions(object):
     
 class Users(object):
     
-    EDITOR = 1
-    ADMIN = 2
+    # Access
+    AUTHED = 0
+    POST_CRUD = 1
+    COMMENTS = 2
+    LINK_CRUD = 3
+    SETTINGS = 4
+    USER_CRUD = 5
+    
+    ACCESS = {
+        1: {'name': 'Editor', 'access': [AUTHED, POST_CRUD, COMMENTS]},
+        2: {'name': 'Admin',  'access': [AUTHED, POST_CRUD, COMMENTS,
+                                         LINK_CRUD, SETTINGS,USER_CRUD]},
+    }
     
     LOGIN = {
         'username': {'reqired': 1, 'escape': 0},
@@ -460,6 +478,7 @@ class Users(object):
         'username': {'reqired': 1, 'escape': 1},
         'password': {'reqired': 1, 'escape': 0},
         'display_name': {'reqired': 1, 'escape': 1},
+        'access_level': {'reqired': 1, 'escape': 0, 'type': int},
         'email_address': {'reqired': 1, 'escape': 1}
     }
     
@@ -494,7 +513,8 @@ class Users(object):
             'salt': salt,
             'create_date': UTCDate(),
             'email_address': user_data['email_address'],
-            'display_name': user_data['display_name']
+            'display_name': user_data['display_name'],
+            'access_level': user_data['access_level'],
         }
         try:
             self.db.insert(new_user)
@@ -542,7 +562,7 @@ class Users(object):
     def get_access_level(self, user_id, ):
         user = self.get_user(user_id)
         if user:
-            return user['access_level']
+            return self.ACCESS[user['access_level']]
         self.error = 'User not found'
         return False
     
@@ -559,8 +579,9 @@ class Users(object):
     
     def get_users(self, ):
         users = []
-        fields = ['username', 'display_name', 'email_address']
+        fields = ['username', 'display_name', 'email_address', 'access_level']
         for user in self.db.find(fields=fields):
+            user['access_name'] = self.ACCESS[user['access_level']]['name']
             users.append(user)
         return users
 

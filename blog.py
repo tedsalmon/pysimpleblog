@@ -24,8 +24,9 @@ def auth_check(access=False, api=False, ):
             kwargs.update(login_data=auth_data)
             if not auth_data and access:
                 error = "Not authorized"
-            if auth_data[1] < access:
-                error = "Insufficient Access"
+            if auth_data:
+                if access not in auth_data[1]['access']:
+                    error = "Insufficient Access"
             if error:
                 if api:
                     response.status = 403
@@ -45,7 +46,7 @@ def show_listing(login_data=False, page_id=None,):
         abort(404, 'Not Found')
     page_variables = generate_pagevars(login_data)
     return template('main', page_variables, page_id=page_id,
-                    posts=posts, recent_posts=entries.get_recent()) 
+                    posts=posts, recent_posts=entries.get_recent())
 
 
 @blog_app.route('/<url:re:[a-z0-9]{6}>', apply=[auth_check()])
@@ -56,6 +57,10 @@ def show_post(url, login_data=False, year=False,):
         abort(404, "Not Found")
     page_variables = generate_pagevars(login_data, post_data['title'],
                                        ', '.join(post_data['tags']))
+    if login_data:
+        user_data = users.get_user(page_variables['user_id'])
+        page_variables['user_dn'] = user_data['display_name']
+        page_variables['user_email'] = user_data['email_address']
     return template('post', page_variables, post=post_data)
 
 
@@ -86,17 +91,14 @@ def show_tags(tag_name, login_data=False, ):
 
 
 # Admin functions
-@blog_app.route('/admin', apply=[auth_check(access=users.EDITOR)])
+@blog_app.route('/admin', apply=[auth_check(access=users.AUTHED)])
 def show_admin(login_data=False, ):
     page_variables = generate_pagevars(login_data, 'Admin')
-    # opts = settings.keys()
-    # opts.sort()
-    # settings=settings,
     cmnts = entries.get_unapproved_comments_count()
     return template('admin/main', page_variables, comment_count=cmnts)
 
 
-@blog_app.route('/admin/new-post', apply=[auth_check(access=users.EDITOR)])
+@blog_app.route('/admin/new-post', apply=[auth_check(access=users.POST_CRUD)])
 def show_new_post(login_data=False, ):
     page_variables = generate_pagevars(login_data, 'New Post')
     return template('admin/post_editor', page_variables)
@@ -104,7 +106,7 @@ def show_new_post(login_data=False, ):
 
 # @todo Rename edit-post
 @blog_app.route('/admin/post-editor/<post_id:re:[a-z0-9]{6}>',
-                apply=[auth_check(access=users.EDITOR, )])
+                apply=[auth_check(access=users.POST_CRUD, )])
 def show_post_editor(post_id, login_data=False, ):
     post = entries.get_post_internal(post_id)
     if not post:
@@ -114,9 +116,9 @@ def show_post_editor(post_id, login_data=False, ):
 
 
 @blog_app.route('/admin/manage-posts',
-                apply=[auth_check(access=users.EDITOR)])
+                apply=[auth_check(access=users.POST_CRUD)])
 @blog_app.route('/admin/manage-posts/<page_num:int>',
-                apply=[auth_check(access=users.EDITOR)])
+                apply=[auth_check(access=users.POST_CRUD)])
 def show_post_manager(page_num=1, login_data=False, ):
     posts = entries.get_posts(page_num, all_posts=True)
     if not posts:
@@ -126,30 +128,42 @@ def show_post_manager(page_num=1, login_data=False, ):
 
 
 @blog_app.route('/admin/comment-approver',
-                apply=[auth_check(access=users.EDITOR)])
+                apply=[auth_check(access=users.COMMENTS)])
 def show_pending_comments(login_data=False, ):
     comments = entries.get_unapproved_comments()
     page_variables = generate_pagevars(login_data, 'Manage Comments')
-    return template('admin/comment_management', page_variables, comments=comments)
+    return template('admin/comment_management', page_variables,
+                    comments=comments)
 
 
 @blog_app.route('/admin/manage-links',
-                apply=[auth_check(access=users.ADMIN)])
+                apply=[auth_check(access=users.LINK_CRUD)])
 def show_link_manager(login_data=False, ):
     page_variables = generate_pagevars(login_data, 'Manage Links')
     return template('admin/link_management', page_variables,
                     links=links.get_links(True))
 
 
-@blog_app.route('/admin/manage-users', apply=[auth_check(access=users.ADMIN)])
-def show_link_manager(login_data=False, ):
+@blog_app.route('/admin/manage-users',
+                apply=[auth_check(access=users.USER_CRUD)])
+def show_user_manager(login_data=False, ):
     page_variables = generate_pagevars(login_data, 'Manage Users')
     return template('admin/user_management', page_variables,
                     users=users.get_users())
 
 
+@blog_app.route('/admin/manage-settings',
+                apply=[auth_check(access=users.SETTINGS)])
+def show_settings_manager(login_data=False, ):
+    page_variables = generate_pagevars(login_data, 'Manage Settings')
+    opts = settings.keys()
+    opts.sort()
+    return template('admin/settings_management', page_variables,
+                    settings=settings, opts=opts)
+
+
 @blog_app.route('/admin/view-profile',
-                apply=[auth_check(access=users.EDITOR)])
+                apply=[auth_check(access=users.AUTHED)])
 def show_profile(login_data=False, ):
     username, access = login_data
     profile_data = users.get_user(username)
@@ -188,7 +202,7 @@ def api_login():
 
 
 @blog_app.route('/api/v1/session', method='DELETE', apply=[auth_check()])
-def apli_logout(login_data=False, ):
+def api_logout(login_data=False, ):
     return_data = {'error': False}
     r = request #< The things I do for PEP8...
     if login_data:
@@ -207,7 +221,7 @@ def api_post_list(page_num, ):
 
 
 @blog_app.route('/api/v1/post', method='POST',
-                apply=[auth_check(access=users.EDITOR, api=True)])
+                apply=[auth_check(access=users.POST_CRUD, api=True)])
 def api_post_create(login_data=False, ):
     return_data = {'error': False}    
     new_post = entries.create_post(request.json, login_data)
@@ -225,7 +239,7 @@ def api_post_get(post_id, ):
 
 
 @blog_app.route('/api/v1/post/<post_id>', method='DELETE',
-                apply=[auth_check(access=users.EDITOR, api=True)])
+                apply=[auth_check(access=users.POST_CRUD, api=True)])
 def api_post_delete(post_id, login_data=False, ):
     return_data = {'error': False}
     if not entries.delete_post(post_id):
@@ -234,7 +248,7 @@ def api_post_delete(post_id, login_data=False, ):
 
 
 @blog_app.route('/api/v1/post/<post_id>', method='PUT',
-                apply=[auth_check(access=users.EDITOR, api=True)])
+                apply=[auth_check(access=users.POST_CRUD, api=True)])
 def api_post_edit(post_id, login_data=False, ):
     return_data = {'error': False}
     res = entries.edit_post(post_id, request.json)
@@ -245,40 +259,44 @@ def api_post_edit(post_id, login_data=False, ):
     return return_data
 
 
-@blog_app.route('/api/v1/post/<post_id>/comment', method='POST')
-def api_comment_create(post_id, ):
+@blog_app.route('/api/v1/post/<post_id>/comment', method='POST',
+                apply=[auth_check(api=True)])
+def api_comment_create(post_id, login_data=False, ):
     return_data = {'error': False}
-    if not entries.create_comment(post_id, request.json):
+    user_ip = request['REMOTE_ADDR'] or request['X-Real-IP']
+    if not entries.create_comment(post_id, request.json, user_ip, login_data):
         return_data['error'] = entries.get_last_error()
     else:
-        return_data['msg'] = 'Comment submitted for approval.'
+        if login_data:
+            return_data['msg'] = 'Comment submitted.'
+        else:
+            return_data['msg'] = 'Comment submitted for approval.'
     return return_data
 
 
 @blog_app.route('/api/v1/post/<post_id>/comment/<comment_id>', method='PUT',
-                apply=[auth_check(access=users.EDITOR, api=True)])
+                apply=[auth_check(access=users.COMMENTS, api=True)])
 def api_comment_approve(comment_id, post_id, login_data=False, ):
     return {"error": not bool(entries.approve_comment(post_id, comment_id))}
 
 
 @blog_app.route('/api/v1/post/<post_id>/comment/<comment_id>', method='DELETE',
-                apply=[auth_check(access=users.EDITOR, api=True)])
+                apply=[auth_check(access=users.COMMENTS, api=True)])
 def api_comment_deny(comment_id, post_id, login_data=False, ):
     return {"error": not bool(entries.deny_comment(post_id, comment_id))}
 
 
 @blog_app.route('/api/v1/link', method='POST',
-                apply=[auth_check(access=users.ADMIN, api=True)])
+                apply=[auth_check(access=users.LINK_CRUD, api=True)])
 def api_link_create(login_data=False, ):
     return_data = {'error': False}
-    user_ip = request['REMOTE_ADDR'] or request['X-Real-IP']
-    if not links.create_link(request.json, login_data, user_ip, login_data):
+    if not links.create_link(request.json, login_data):
         return_data['error'] = links.get_last_error()
     return return_data
 
 
 @blog_app.route('/api/v1/link/<link_id>', method='DELETE',
-                apply=[auth_check(access=users.ADMIN, api=True)])
+                apply=[auth_check(access=users.LINK_CRUD, api=True)])
 def api_link_delete(link_id, login_data=False, ):
     return_data = {'error': False}
     if not links.delete_link(link_id):
@@ -287,7 +305,7 @@ def api_link_delete(link_id, login_data=False, ):
 
 
 @blog_app.route('/api/v1/link/<link_id>', method='PUT',
-                apply=[auth_check(access=users.ADMIN, api=True)])
+                apply=[auth_check(access=users.LINK_CRUD, api=True)])
 def api_link_edit(link_id, login_data=False, ):
     return_data = {'error': False}
     if not links.edit_link(link_id, request.json):
@@ -295,8 +313,8 @@ def api_link_edit(link_id, login_data=False, ):
     return return_data
 
 
-@blog_app.route('/api/v1/user', method='POST',
-                apply=[auth_check(access=users.ADMIN, api=True)])
+@blog_app.route('/api/v1/users', method='GET',
+                apply=[auth_check(access=users.USER_CRUD, api=True)])
 def api_create_user(login_data=False, ):
     return_data = {'error': False}
     if not users.create_user(request.json):
@@ -304,15 +322,42 @@ def api_create_user(login_data=False, ):
     return return_data
 
 
+@blog_app.route('/api/v1/user', method='POST',
+                apply=[auth_check(access=users.USER_CRUD, api=True)])
+def api_create_user(login_data=False, ):
+    return_data = {'error': False}
+    if not users.create_user(request.json):
+        return_data['error'] = users.get_last_error()
+    return return_data
+
+
+@blog_app.route('/api/v1/user/<user_id>', method='PUT',
+                apply=[auth_check(access=users.USER_CRUD, api=True)])
+def api_edit_user(user_id, login_data=False, ):
+    return_data = {'error': False}
+    #if not users.create_user(request.json):
+    #    return_data['error'] = users.get_last_error()
+    return return_data
+
+
+@blog_app.route('/api/v1/user/<user_id>', method='PUT',
+                apply=[auth_check(access=users.USER_CRUD, api=True)])
+def api_delete_user(user_id, login_data=False, ):
+    return_data = {'error': False}
+    #if not users.create_user(request.json):
+    #    return_data['error'] = users.get_last_error()
+    return return_data
+
+
 @blog_app.route('/api/v1/changepassword/<username>', method='PUT',
-                apply=[auth_check(access=users.EDITOR, api=True)])
+                apply=[auth_check(access=users.AUTHED, api=True)])
 def api_password_edit(login_data=False, ):
     return_data = {'error': False}
     #@TODO Implement
     return return_data
 
 @blog_app.route('/api/v1/settings/<settings_key>', method='PUT',
-                apply=[auth_check(access=users.ADMIN, api=True)])
+                apply=[auth_check(access=users.SETTINGS, api=True)])
 def api_settings_edit(settings_key, login_data=False, ):
     return_data = {'error': False}
     keys = settings.keys()
@@ -364,6 +409,7 @@ def generate_pagevars(login_data=False, sub_title=False, keywords=False, ):
     user_id, access = False, False 
     if login_data:
         user_id, access = login_data
+        access = access['access']
     return_data = {
         'user_id': user_id,
         'access_level': access,

@@ -13,6 +13,7 @@
             <th>Username</th>
             <th>Display Name</th>
             <th>Email Address</th>
+            <th>Access Level</th>
             <th>Delete</th>
         </tr>
     </thead>
@@ -20,8 +21,9 @@
 {% for user in users %}
     <tr data-link-id="{{user['_id']}}">
         <td>{{user['_id']}}</td>
-        <td><h title="Click to edit" class="edit-user editable link-url" data-name="url" data-type="text">{{user['display_name']}}</h></td>
-        <td><h title="Click to edit" class="edit-user editable link-url" data-name="url" data-type="text">{{user['email_address']}}</h></td>
+        <td><h title="Click to edit" class="edit-user editable" data-name="display_name" data-type="text">{{user['display_name']}}</h></td>
+        <td><h title="Click to edit" class="edit-user editable" data-name="email_address" data-type="text">{{user['email_address']}}</h></td>
+        <td><h title="Click to edit" class="edit-settings-bool editable" data-name="access_level" data-type="select" data-value={{user['access_level']|int}} data-source="[{value: 1, text: 'Editor'},{value: 2, text: 'Admin'}]">{{user['access_name']}}</h></td>
         <td><a title="Delete Link" class="delete-user icon-ban-circle" href="#"></a></td>
     </tr>
 {% endfor %}
@@ -54,6 +56,15 @@
                 <label class="control-label" for="user_email_address">Email Address</label>
                 <div class="controls">
                     <input id='user_email_address' type="text" placeholder="Email Address">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="user_email_address">Access Level</label>
+                <div class="controls">
+                    <select id='user_access_level' placeholder="Email Address">
+                        <option value="1">Editor</option>
+                        <option value="2">Administrator</option>
+                    </select>
                 </div>
             </div>
             <div class="control-group">
