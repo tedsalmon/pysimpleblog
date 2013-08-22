@@ -53,9 +53,8 @@ class Settings(dict):
         return data
 
     def __setitem__(self, key, item, ):
-        self.itemlist.append(key)
-        super(Settings, self).__setitem__(key, item)
         self._fileLoad()
+        self.itemlist.__setitem__(key, item)
         self.settings[key] = item
         data = open(self.FILE,'w')
         data.write(json.dumps(self.settings))

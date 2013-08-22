@@ -99,7 +99,7 @@ class Blog(object):
             return False
         comment_data['id'] = self._create_id()
         comment_data['date'] = UTCDate()
-        comment_data['approval'] = int(is_authed)
+        comment_data['approval'] = int(is_authed is True)
         comment_data['IP'] = src_ip
         res = self.blog_db.update({'_id': post_id},
                             {'$push': {'comments': comment_data}})

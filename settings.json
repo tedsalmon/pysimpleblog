@@ -1,15 +1,1 @@
-{
-    "site_title": "Your Blog",
-    "site_header": "This is a Blog!",
-    "site_subheader": "I like cats",
-    "site_footer": "Default Footer",
-    "site_description": "This describes your non-post pages",
-    "site_keywords": "site, keywords, go, here",
-    "site_url": "",
-    "site_ga_key": "",
-    "database_address": "127.0.0.1",
-    "database_username": "",
-    "database_password": "",
-    "database_name": "blog",
-    "debug": false
-}
+{"site_ga_key": "", "site_header": "This is a Blog!", "site_keywords": "site, keywords, go, here", "database_address": "127.0.0.1", "site_subheader": "Stuff In your awesome subheader, yo", "site_url": "", "database_password": "", "site_description": "This describes your non-post pages", "site_title": "Your Blog", "site_footer": "Default Footer", "database_username": "", "debug": false, "database_name": "blog"}

@@ -363,7 +363,10 @@ def api_settings_edit(settings_key, login_data=False, ):
     keys = settings.keys()
     if settings_key in keys:
         try:
-            settings[settings_key] = request.json['val']
+            if settings_key == 'debug':
+                settings[settings_key] = bool(int(request.json['val']))
+            else:
+                settings[settings_key] = request.json['val']
         except KeyError:
             return_data['error'] = 'No value in request data'
     else:

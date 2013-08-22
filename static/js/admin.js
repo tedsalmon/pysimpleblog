@@ -1,8 +1,8 @@
 Blog.Admin = {
     init: function(){
 	// Override x-editable buttons
-	$.fn.editableform.buttons = '<a class="blog-edit-control clickable icon-ok editable-submit"></a>\
-				     <a class="blog-edit-control clickable icon-remove editable-cancel"></a>';
+	$.fn.editableform.buttons = '<button class="blog-edit-control clickable editable-submit"><i class="icon-ok"></i></button>\
+				     <button class="blog-edit-control clickable editable-cancel"><i class="icon-remove"></i></button>';
 	this.bindUIActions();
     },
     bindUIActions: function(){
@@ -25,16 +25,21 @@ Blog.Admin = {
 				'url': this.editLink,
 				'clear': false,
 				'placeholder': 'Click to edit...',
-				'tpl': '<input type="text" class="input-medium input-small-height"/>'});
+				'tpl': '<input type="text" class="input-medium input-small-height"/>'
+	});
 	$('.edit-settings').editable({'mode': 'inline',
 				'url': this.editSettings,
 				'clear': false,
-				'tpl': '<input type="text" class="input-medium input-small-height"/>'});
-	$('.edit-settings-bool').editable({'mode': 'inline'});
+				'tpl': '<input type="text" class="input-medium input-small-height"/>'
+	});
+	$('.edit-settings-select').editable({'mode': 'inline',
+					    'url': this.editSettings
+	});
 	$('.edit-user').editable({'mode': 'inline',
 				'url': this.editUser,
 				'clear': false,
-				'tpl': '<input type="text" class="input-medium input-small-height"/>'});
+				'tpl': '<input type="text" class="input-medium input-small-height"/>'
+	});
 	$('#user_add_trigger').click(function(){
 	    $('#user_add_modal').modal(); 
 	});
@@ -228,7 +233,17 @@ Blog.Admin = {
 	return false;
     },
     editSettings: function(params){
-	console.log(params);
+	$.ajax({
+	    url: '/api/v1/settings/' + params.name,
+	    type: 'PUT',
+	    data: JSON.stringify({'val': params.value}),
+	    contentType: 'application/json; charset=utf-8',
+	    success: function($return_data) {
+		if($return_data.error)
+		    alert($return_data.error);
+	    }
+	});
+	return false;
     },
     editUser: function(params){
 	console.log(params);

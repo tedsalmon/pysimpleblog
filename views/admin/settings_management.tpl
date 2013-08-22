@@ -16,7 +16,7 @@
             {% if key != 'debug' %}
             <h id="settings_{{key}}" title="Click to edit" class="edit-settings editable" data-name="{{key}}" data-type="text">{{val}}</h>
             {%else %}
-            <h id="settings_{{key}}" title="Click to edit" class="edit-settings-bool editable" data-name="{{key}}" data-value={{val|int}} data-type="select" data-source="[{value: 1, text: 'True'},{value: 0, text: 'False'}]">{{val}}</h>
+            <h id="settings_{{key}}" title="Click to edit" class="edit-settings-select editable" data-name="{{key}}" data-value={{val|int}} data-type="select" data-source="[{value: 1, text: 'True'},{value: 0, text: 'False'}]">{{val}}</h>
             {% endif %}
         </div>
     </div>
