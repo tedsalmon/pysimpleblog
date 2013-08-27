@@ -264,7 +264,11 @@ def api_post_edit(post_id, login_data=False, ):
                 apply=[auth_check(api=True)])
 def api_comment_create(post_id, login_data=False, ):
     return_data = {'error': False}
-    user_ip = request['REMOTE_ADDR'] or request['X-Real-IP']
+    ip_fields = ['REMOTE_ADDR', 'X-Real-IP']
+    user_ip = False
+    for fld in ip_fields:
+        if request[fld] and request[fld] != '127.0.0.1':
+            user_ip = request[fld]
     if not entries.create_comment(post_id, request.json, user_ip, login_data):
         return_data['error'] = entries.get_last_error()
     else:
