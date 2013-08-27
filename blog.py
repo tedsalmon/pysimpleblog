@@ -223,8 +223,9 @@ def api_post_list(page_num, ):
 @blog_app.route('/api/v1/post', method='POST',
                 apply=[auth_check(access=users.POST_CRUD, api=True)])
 def api_post_create(login_data=False, ):
-    return_data = {'error': False}    
-    new_post = entries.create_post(request.json, login_data)
+    return_data = {'error': False}
+    username, access = login_data
+    new_post = entries.create_post(request.json, username)
     if not new_post:
         return_data['error'] = entries.get_last_error()
     else:
@@ -290,7 +291,8 @@ def api_comment_deny(comment_id, post_id, login_data=False, ):
                 apply=[auth_check(access=users.LINK_CRUD, api=True)])
 def api_link_create(login_data=False, ):
     return_data = {'error': False}
-    if not links.create_link(request.json, login_data):
+    username, access = login_data
+    if not links.create_link(request.json, username):
         return_data['error'] = links.get_last_error()
     return return_data
 
