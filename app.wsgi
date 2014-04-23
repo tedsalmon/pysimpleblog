@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 import sys
-# Append lamp dir to path and then chdir to it
+# Append blog directory to path and then chdir to it
 current_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append('%s/../' % current_path)
 os.chdir(current_path)
